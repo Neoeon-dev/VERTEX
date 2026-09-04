@@ -92,7 +92,7 @@ def _extract_urls_from_html(html: str) -> list[str]:
 
     # src="..."
     src_pattern = re.compile(r'src=["\']([^"\']+)["\']', re.IGNORECASE)
-    urls.extend(src_pattern.findall(src_pattern.pattern))
+    urls.extend(src_pattern.findall(html))
 
     # Also extract bare URLs from text content
     text_urls = _extract_urls_from_text(html)

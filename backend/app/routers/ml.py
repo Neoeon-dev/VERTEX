@@ -58,7 +58,11 @@ def classify_email(
     if email_record is None:
         raise HTTPException(status_code=404, detail="Email not found.")
 
-    result = _run_classification(email_record)
+    try:
+        result = _run_classification(email_record)
+    except Exception as e:
+        logger.exception("ML classification failed for email %d", email_id)
+        raise HTTPException(status_code=500, detail=f"Classification failed: {type(e).__name__}: {e}")
 
     return MLClassificationOut(
         email_id=email_id,

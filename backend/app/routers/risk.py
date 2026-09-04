@@ -100,7 +100,13 @@ def compute_risk(email_id: int, db: Annotated[Session, Depends(get_db)]):
     email_record = db.query(Email).filter(Email.id == email_id).first()
     if email_record is None:
         raise HTTPException(status_code=404, detail="Email not found.")
-    return _run_risk_assessment(email_id, email_record)
+    try:
+        return _run_risk_assessment(email_id, email_record)
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.exception("Risk assessment failed for email %d", email_id)
+        raise HTTPException(status_code=500, detail=f"Risk assessment failed: {type(e).__name__}: {e}")
 
 
 @router.get("/{email_id}/risk", response_model=RiskAssessmentOut)

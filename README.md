@@ -579,6 +579,22 @@ pip install -r requirements.txt
 
 ---
 
+#### Port Already in Use (Address already in use)
+
+**Symptom:** `[Errno 98] Address already in use` when starting the server.
+
+**Cause:** Another process is using port 8000.
+
+**Fix:**
+```bash
+# Kill whatever is using port 8000
+lsof -ti :8000 | xargs kill -9
+# Or use run.sh which does this automatically
+bash run.sh
+```
+
+---
+
 #### Frontend Won't Start
 
 **Symptom:** `npm run dev` fails with errors.
@@ -612,26 +628,21 @@ npm run dev
 
 ---
 
-#### Port Already in Use
+#### Stale Python Cache (old code running after edits)
 
-**Symptom:** `Error: [Errno 98] Address already in use`.
+**Symptom:** Bug fixes don't take effect even after editing source files. Server still shows old behavior.
 
-**Cause:** Another process is using port 8000 or 5173.
+**Cause:** Python's `__pycache__` directories contain compiled bytecode from previous runs.
 
 **Fix:**
 ```bash
-# Find the process
-lsof -i :8000
-# Kill it
-kill <PID>
+# Delete all Python cache files
+find . -name "__pycache__" -exec rm -rf {} +
+# Restart the server
+bash run.sh
 ```
 
-Or change the port:
-```bash
-# Backend on a different port
-python -m uvicorn app.main:app --port 8001
-# Update frontend proxy in vite.config.js accordingly
-```
+This is handled automatically by `run.sh`.
 
 ---
 
@@ -918,8 +929,8 @@ Results + Forensic Report
 | **Styling** | Tailwind CSS | 4.x |
 | **HTTP Client** | Axios | 1.20.x |
 | **Routing** | React Router | 7.x |
-| **Backend** | FastAPI | Latest |
-| **ORM** | SQLAlchemy | Latest |
+| **Backend** | FastAPI | 0.141.x |
+| **ORM** | SQLAlchemy | 2.0.x |
 | **Database** | PostgreSQL | 16 |
 | **Database (dev)** | SQLite | Built-in |
 | **ML** | scikit-learn | Latest |
@@ -1296,7 +1307,7 @@ No sample `.eml` files are included in the repository. To test the application:
 
 ## 📊 Project Status
 
-**Version:** 0.1.0 (Prototype)
+**Version:** 0.1.1 (Stable)
 
 Core features implemented:
 - ✅ Email parsing and storage
@@ -1304,7 +1315,7 @@ Core features implemented:
 - ✅ Received header reconstruction
 - ✅ IP geolocation and ASN
 - ✅ Domain intelligence
-- ✅ URL analysis
+- ✅ URL analysis (including HTML `src` attribute extraction)
 - ✅ Attachment analysis
 - ✅ ML classification
 - ✅ Risk scoring
@@ -1314,7 +1325,9 @@ Core features implemented:
 - ✅ Case management
 - ✅ Forensic reports
 - ✅ Frontend UI
-- ✅ Test suite
+- ✅ Test suite (158 tests)
+- ✅ Multi-header Received handling
+- ✅ Graceful error handling with descriptive messages
 
 ---
 
@@ -1326,6 +1339,7 @@ Core features implemented:
 - **SPF evaluation is simplified** — complex `include:` chains and IPv6 are not fully supported.
 - **No real-time threat feeds** — domain/IP reputation relies on local analysis only.
 - **PDF generation requires WeasyPrint** — falls back to HTML if not installed.
+- **No Docker frontend container** — frontend runs via `npm run dev` only.
 
 ---
 
@@ -1355,6 +1369,34 @@ Core features implemented:
 | **Hash chain for evidence** | Append-only with cryptographic verification. No blockchain overhead. |
 | **WeasyPrint for PDF** | Pure Python, no wkhtmltopdf dependency. Falls back to HTML gracefully. |
 | **Vite proxy for API** | Avoids CORS issues in development. Production would use nginx reverse proxy. |
+| **Defensive list handling** | `get_headers_dict()` returns lists for duplicate headers; all consumers handle both `str` and `list[str]`. |
+| **try/except on all analysis endpoints** | Prevents raw 500 errors; returns descriptive error messages for debugging. |
+
+---
+
+## 📝 Changelog
+
+### v0.1.1 (September 2026)
+
+**Bug Fixes:**
+- Fixed `TypeError` in SPF analyzer when emails have multiple `Received` headers (header values returned as `list` instead of `str`)
+- Fixed URL extraction from HTML — `<img src="...">` URLs were never extracted due to a bug searching the regex pattern instead of HTML content
+- Added error handling with descriptive messages on `analyze-full`, `risk`, and `classify` endpoints (previously returned generic `500 Internal Server Error`)
+
+**Improvements:**
+- Updated FastAPI 0.115.0 → 0.141.1, Starlette 0.38.6 → 1.6.0, Uvicorn 0.30.6 → 0.52.4 (fixed 57+ deprecation warnings)
+- `run.sh` now auto-clears `__pycache__` and kills stale processes on startup
+- All 158 tests passing with zero functional warnings
+
+### v0.1.0 (Initial Release)
+- Core email forensics pipeline
+- SPF/DKIM/DMARC analysis
+- ML classification with explainable signals
+- Risk scoring engine
+- Correlation graph
+- Evidence chain of custody
+- Forensic PDF reports
+- React frontend with full analysis dashboard
 
 ---
 

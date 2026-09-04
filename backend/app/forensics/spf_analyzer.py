@@ -61,9 +61,12 @@ class SPFResult:
         }
 
 
-def _extract_return_path_domain(headers: dict[str, str]) -> str | None:
+def _extract_return_path_domain(headers: dict[str, str | list[str]]) -> str | None:
     """Extract the envelope sender domain from the Return-Path header."""
     return_path = headers.get("return-path", "")
+    # Handle list values (multiple headers with same name)
+    if isinstance(return_path, list):
+        return_path = return_path[0] if return_path else ""
     if not return_path:
         return None
 
@@ -80,13 +83,16 @@ def _extract_return_path_domain(headers: dict[str, str]) -> str | None:
     return None
 
 
-def _extract_connecting_ip(headers: dict[str, str]) -> str | None:
+def _extract_connecting_ip(headers: dict[str, str | list[str]]) -> str | None:
     """Extract the most likely connecting IP from the first Received header.
 
     This is an approximation — the first Received header's source is often
     the connecting IP, but not always trustworthy.
     """
     received = headers.get("received", "")
+    # Handle list values (multiple Received headers)
+    if isinstance(received, list):
+        received = received[0] if received else ""
     if not received:
         return None
 
