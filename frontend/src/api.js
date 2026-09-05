@@ -130,6 +130,8 @@ export function getReportUrl(emailId) {
 // ── Health ─────────────────────────────────────────────────────────
 
 export async function checkHealth() {
-  const { data } = await axios.get('/health')
+  const { data } = await axios.get(
+    `${import.meta.env.VITE_API_URL}/health`
+  )
   return data
 }
