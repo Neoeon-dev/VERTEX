@@ -44,6 +44,8 @@ app.add_middleware(
         "http://127.0.0.1:3000",
         "http://localhost:80",
         "http://localhost",
+        "https://vertex-mca6cp0i3-neoeon-devs-projects.vercel.app",
+
     ],
     allow_origin_regex=r"^https?://(localhost|127\.0\.0\.1)(:\d+)?$",
     allow_credentials=True,
