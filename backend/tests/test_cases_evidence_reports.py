@@ -1,4 +1,4 @@
-"""Tests for Day 12 (case management, evidence chain, audit log) and Day 13 (correlation graph, PDF report)."""
+"""Tests for case management, evidence chain, audit log, correlation graph, and forensic reports."""
 from __future__ import annotations
 
 import io

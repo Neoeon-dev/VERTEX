@@ -1,13 +1,13 @@
 """Database engine, session factory and declarative base.
 
-Production uses PostgreSQL (see config.Settings.database_url). Tests override
-DATABASE_URL to SQLite so the test-suite runs without external services.
+Uses PostgreSQL exclusively. The DATABASE_URL environment variable must
+point to a PostgreSQL instance. If unreachable, the application fails
+with a clear configuration error.
 """
 from collections.abc import Generator
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import DeclarativeBase, Session, sessionmaker
-from sqlalchemy.pool import StaticPool
 
 from .config import settings
 
@@ -19,11 +19,10 @@ class Base(DeclarativeBase):
 def _create_engine(database_url: str):
     kwargs = {"pool_pre_ping": True}
     if database_url.startswith("sqlite"):
-        # SQLite requires a shared connection when used from FastAPI threads
-        # and an in-memory database; pin the pool to a single connection.
-        kwargs["connect_args"] = {"check_same_thread": False}
-        if database_url == "sqlite:///:memory:":
-            kwargs["poolclass"] = StaticPool
+        raise ValueError(
+            "SQLite is not supported. Set DATABASE_URL to a PostgreSQL connection string. "
+            "Example: postgresql+psycopg2://user:pass@localhost:5432/dbname"
+        )
     return create_engine(database_url, **kwargs)
 
 
@@ -44,8 +43,8 @@ def get_db() -> Generator[Session, None, None]:
 def init_db() -> None:
     """Create all tables on startup.
 
-    A lightweight approach is enough for the prototype; switch to Alembic
-    migrations once the schema stabilizes and before any deployment.
+    Uses Alembic-style migrations in production; create_all is sufficient
+    for the prototype phase.
     """
     # Import models so SQLAlchemy registers all tables in the metadata.
     from . import models  # noqa: F401

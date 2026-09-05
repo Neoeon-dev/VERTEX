@@ -57,6 +57,76 @@ export async function getRisk(emailId) {
   return data
 }
 
+// ── Cases ───────────────────────────────────────────────────────────
+
+export async function listCases() {
+  const { data } = await api.get('/cases')
+  return data
+}
+
+export async function getCase(id) {
+  const { data } = await api.get(`/cases/${id}`)
+  return data
+}
+
+export async function createCase(caseData) {
+  const { data } = await api.post('/cases', caseData)
+  return data
+}
+
+export async function updateCase(id, caseData) {
+  const { data } = await api.put(`/cases/${id}`, caseData)
+  return data
+}
+
+export async function assignEmailToCase(caseId, emailId) {
+  const { data } = await api.post(`/cases/${caseId}/emails/${emailId}`)
+  return data
+}
+
+export async function getCaseEmails(caseId) {
+  const { data } = await api.get(`/cases/${caseId}/emails`)
+  return data
+}
+
+// ── Evidence & Audit ────────────────────────────────────────────────
+
+export async function verifyEvidence(emailId) {
+  const { data } = await api.get(`/evidence/verify/${emailId}`)
+  return data
+}
+
+export async function getAuditLogs(skip = 0, limit = 100) {
+  const { data } = await api.get('/audit', { params: { skip, limit } })
+  return data
+}
+
+export async function verifyAuditLog() {
+  const { data } = await api.post('/audit/verify')
+  return data
+}
+
+// ── Correlation & Reports ───────────────────────────────────────────
+
+export async function getCorrelationGraph() {
+  const { data } = await api.get('/graph')
+  return data
+}
+
+export async function getSharedInfrastructure() {
+  const { data } = await api.get('/graph/shared')
+  return data
+}
+
+export async function addEmailToGraph(emailId) {
+  const { data } = await api.post(`/graph/email/${emailId}`)
+  return data
+}
+
+export function getReportUrl(emailId) {
+  return `/api/reports/${emailId}/pdf`
+}
+
 // ── Health ─────────────────────────────────────────────────────────
 
 export async function checkHealth() {

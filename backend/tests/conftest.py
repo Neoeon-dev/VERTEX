@@ -1,31 +1,75 @@
 """Shared test fixtures.
 
-Uses an in-memory SQLite database so tests run without PostgreSQL.
+Uses a PostgreSQL test database (mailtrace_test) on the same PostgreSQL
+instance as the application. Set DATABASE_URL to your PostgreSQL connection
+string before running tests. The test database is created/destroyed per test.
 """
 from __future__ import annotations
 
+import logging
 import os
+import re
 
-# Force SQLite before any app imports that read database_url
-os.environ["DATABASE_URL"] = "sqlite:///:memory:"
+logger = logging.getLogger(__name__)
+
+# Use a dedicated test database on PostgreSQL
+_raw_db_url = os.environ.get(
+    "DATABASE_URL",
+    "postgresql+psycopg2://mailtrace:mailtrace@localhost:5432/mailtrace",
+)
+
+# Replace only the database name (last path component) with mailtrace_test
+_test_db_url = re.sub(
+    r"(/[^/?]+)(\?.*)?$",
+    r"/mailtrace_test\2",
+    _raw_db_url,
+)
+os.environ["DATABASE_URL"] = _test_db_url
 # Disable .env file loading during tests
 os.environ["DEMO_MODE"] = "false"
 
 import pytest
 from fastapi.testclient import TestClient
-from sqlalchemy import StaticPool, create_engine
-from sqlalchemy.orm import Session, sessionmaker
+from sqlalchemy import create_engine, text
+from sqlalchemy.orm import sessionmaker
 
 from app.db import Base, get_db
 from app.main import app
 
-# Create a fresh engine + tables for the test session
-_test_engine = create_engine(
-    "sqlite:///:memory:",
-    connect_args={"check_same_thread": False},
-    poolclass=StaticPool,
-)
+# Create engine for the test database
+_test_engine = create_engine(_test_db_url, pool_pre_ping=True)
 _TestSession = sessionmaker(bind=_test_engine, autocommit=False, autoflush=False)
+
+
+def _create_test_database():
+    """Create the test database if it does not exist."""
+    # Connect to the default 'postgres' database to create/drop test db
+    default_url = re.sub(
+        r"(/[^/?]+)(\?.*)?$",
+        r"/postgres\2",
+        _raw_db_url,
+    )
+    default_engine = create_engine(default_url, isolation_level="AUTOCOMMIT")
+    try:
+        with default_engine.connect() as conn:
+            result = conn.execute(
+                text("SELECT 1 FROM pg_database WHERE datname = :name"),
+                {"name": "mailtrace_test"},
+            )
+            if not result.fetchone():
+                conn.execute(text("CREATE DATABASE mailtrace_test"))
+                logger.info("Created test database: mailtrace_test")
+    except Exception as exc:
+        logger.warning("Could not create test database: %s", exc)
+    finally:
+        default_engine.dispose()
+
+
+# Try to create test database at import time
+try:
+    _create_test_database()
+except Exception:
+    pass
 
 
 def _override_get_db():

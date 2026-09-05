@@ -1,6 +1,14 @@
 import { useState, useEffect } from 'react'
 import { useParams, Link } from 'react-router-dom'
-import { getEmail, runFullAnalysis, classifyEmail, computeRisk } from '../api'
+import {
+  getEmail,
+  runFullAnalysis,
+  classifyEmail,
+  computeRisk,
+  verifyEvidence,
+  getReportUrl,
+  addEmailToGraph,
+} from '../api'
 
 function RiskBadge({ score, level }) {
   const pct = typeof score === 'number' ? Math.round(score) : Math.round(score * 100)
@@ -105,13 +113,29 @@ export default function EmailDetailPage() {
   const [loading, setLoading] = useState(true)
   const [analyzing, setAnalyzing] = useState(false)
   const [error, setError] = useState(null)
+  const [verifyingEvidence, setVerifyingEvidence] = useState(false)
+  const [evidenceVerification, setEvidenceVerification] = useState(null)
+  const [correlating, setCorrelating] = useState(false)
+  const [actionAlert, setActionAlert] = useState(null)
 
   useEffect(() => {
-    setLoading(true)
+    let ignore = false
     getEmail(id)
-      .then(setEmail)
-      .catch((err) => setError(err.message))
-      .finally(() => setLoading(false))
+      .then((data) => {
+        if (!ignore) {
+          setEmail(data)
+          setLoading(false)
+        }
+      })
+      .catch((err) => {
+        if (!ignore) {
+          setError(err.message)
+          setLoading(false)
+        }
+      })
+    return () => {
+      ignore = true
+    }
   }, [id])
 
   const runAnalysis = async () => {
@@ -133,6 +157,36 @@ export default function EmailDetailPage() {
     }
   }
 
+  const handleDownloadReport = () => {
+    window.open(getReportUrl(id), '_blank')
+  }
+
+  const handleVerifyEvidence = async () => {
+    setVerifyingEvidence(true)
+    setActionAlert(null)
+    try {
+      const res = await verifyEvidence(id)
+      setEvidenceVerification(res)
+    } catch (err) {
+      setActionAlert({ type: 'error', text: err.response?.data?.detail || err.message })
+    } finally {
+      setVerifyingEvidence(false)
+    }
+  }
+
+  const handleAddToGraph = async () => {
+    setCorrelating(true)
+    setActionAlert(null)
+    try {
+      await addEmailToGraph(id)
+      setActionAlert({ type: 'success', text: `Email #${id} linked to Threat Correlation Graph.` })
+    } catch (err) {
+      setActionAlert({ type: 'error', text: err.response?.data?.detail || err.message })
+    } finally {
+      setCorrelating(false)
+    }
+  }
+
   if (loading) return <div className="p-8 text-center text-text-dim">Loading...</div>
   if (!email) return <div className="p-8 text-center text-danger">Email not found</div>
 
@@ -142,7 +196,7 @@ export default function EmailDetailPage() {
   return (
     <div className="p-8 max-w-5xl mx-auto space-y-6">
       {/* Header */}
-      <div className="flex items-start justify-between">
+      <div className="flex items-start justify-between flex-wrap gap-4">
         <div>
           <Link to="/emails" className="text-sm text-primary hover:underline mb-2 inline-block">← Back to list</Link>
           <h2 className="text-2xl font-bold text-text">{email.subject || '(no subject)'}</h2>
@@ -151,19 +205,88 @@ export default function EmailDetailPage() {
             {email.sender_name && <span>({email.sender_name})</span>}
           </div>
         </div>
-        <div className="text-right">
+        <div className="text-right space-y-2">
           <RiskBadge score={riskScore} level={riskLevel} />
-          {!analysis && (
+          <div className="flex flex-wrap items-center justify-end gap-2 pt-2">
+            {!analysis && (
+              <button
+                onClick={runAnalysis}
+                disabled={analyzing}
+                className="px-3 py-1.5 bg-primary text-white rounded-lg text-xs font-medium hover:bg-primary-dark disabled:opacity-50 transition-colors"
+              >
+                {analyzing ? 'Analyzing...' : '⚡ Run Full Analysis'}
+              </button>
+            )}
             <button
-              onClick={runAnalysis}
-              disabled={analyzing}
-              className="mt-3 px-4 py-2 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary-dark disabled:opacity-50 transition-colors"
+              onClick={handleDownloadReport}
+              className="px-3 py-1.5 bg-surface border border-border text-text rounded-lg text-xs font-medium hover:bg-surface-alt hover:border-primary/50 transition-colors"
             >
-              {analyzing ? 'Analyzing...' : 'Run Full Analysis'}
+              📄 Export Report
             </button>
-          )}
+            <button
+              onClick={handleVerifyEvidence}
+              disabled={verifyingEvidence}
+              className="px-3 py-1.5 bg-surface border border-border text-text rounded-lg text-xs font-medium hover:bg-surface-alt hover:border-primary/50 disabled:opacity-50 transition-colors"
+            >
+              🛡️ {verifyingEvidence ? 'Verifying...' : 'Verify Evidence'}
+            </button>
+            <button
+              onClick={handleAddToGraph}
+              disabled={correlating}
+              className="px-3 py-1.5 bg-surface border border-border text-text rounded-lg text-xs font-medium hover:bg-surface-alt hover:border-primary/50 disabled:opacity-50 transition-colors"
+            >
+              🌐 {correlating ? 'Adding...' : 'Add to Graph'}
+            </button>
+          </div>
         </div>
       </div>
+
+      {actionAlert && (
+        <div className={`p-3 rounded-lg text-xs font-medium border ${
+          actionAlert.type === 'success'
+            ? 'bg-success-bg text-success border-success/30'
+            : 'bg-danger-bg text-danger border-danger/30'
+        }`}>
+          {actionAlert.text}
+        </div>
+      )}
+
+      {evidenceVerification && (
+        <div className="p-4 bg-surface rounded-xl border border-border space-y-2">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-semibold text-text flex items-center gap-1.5">
+              <span className={`w-2 h-2 rounded-full ${evidenceVerification.valid ? 'bg-success' : 'bg-danger'}`}></span>
+              Evidence Chain Integrity: {evidenceVerification.valid ? 'VERIFIED' : 'TAMPERED'}
+            </span>
+            <button
+              onClick={() => setEvidenceVerification(null)}
+              className="text-text-dim hover:text-text text-xs"
+            >
+              ✕ Dismiss
+            </button>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs pt-1">
+            <div>
+              <span className="text-text-dim block">Chain Entries:</span>
+              <span className="font-semibold text-text">{evidenceVerification.entries?.length || 0}</span>
+            </div>
+            <div>
+              <span className="text-text-dim block">Raw File SHA-256:</span>
+              <span className="font-mono text-text">{email.sha256?.slice(0, 12)}…</span>
+            </div>
+            <div>
+              <span className="text-text-dim block">Verification Result:</span>
+              <span className={`font-semibold ${evidenceVerification.valid ? 'text-success' : 'text-danger'}`}>
+                {evidenceVerification.valid ? '100% Intact' : 'Integrity Broken'}
+              </span>
+            </div>
+            <div>
+              <span className="text-text-dim block">Custody Status:</span>
+              <span className="font-semibold text-text">Tamper-Evident Active</span>
+            </div>
+          </div>
+        </div>
+      )}
 
       {error && (
         <div className="p-4 bg-danger-bg border border-danger/20 rounded-lg text-danger text-sm">{error}</div>

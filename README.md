@@ -1,6 +1,57 @@
-# SIH26106 — MailTrace: AI-Powered Email Threat Detection, GeoLocation & Forensic Intelligence Platform
+# MailTrace — AI-Powered Email Threat Detection, GeoLocation & Forensic Intelligence Platform
 
-> Analyze suspicious emails, detect phishing, and generate forensic reports with a single `.eml` upload.
+> Analyze suspicious emails, detect phishing, reconstruct relay paths, verify cryptographic evidence integrity, and generate forensic reports with a single `.eml` upload.
+
+[![Version](https://img.shields.io/badge/version-0.3.0-blue.svg)](https://github.com/your-org/mailtrace)
+[![Python](https://img.shields.io/badge/python-3.11%20%7C%203.12%20%7C%203.14-blue)](https://www.python.org/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.141+-009688.svg)](https://fastapi.tiangolo.com)
+[![React](https://img.shields.io/badge/React-19.2-61DAFB.svg)](https://react.dev)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind-v4.3-38B2AC.svg)](https://tailwindcss.com)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-336791.svg)](https://www.postgresql.org)
+[![Alembic](https://img.shields.io/badge/Alembic-1.13+-red.svg)](https://alembic.sqlalchemy.org)
+[![Tests](https://img.shields.io/badge/tests-158%20passed-brightgreen.svg)]()
+[![SIH](https://img.shields.io/badge/SIH-2026%20Problem%20SIH26106-orange.svg)](https://sih.gov.in)
+
+---
+
+## 📑 Table of Contents
+
+- [🚀 User Manual / Getting Started](#-user-manual--getting-started)
+  - [What This Application Does](#what-this-application-does)
+  - [Prerequisites](#prerequisites)
+  - [Clone the Repository](#clone-the-repository)
+  - [Environment Setup](#environment-setup)
+  - [Database Setup](#database-setup)
+  - [Required Data Files](#required-data-files)
+  - [Start the Application](#start-the-application)
+  - [Verify the Installation](#verify-the-installation)
+  - [Local URLs](#local-urls)
+  - [First-Time User Workflow](#first-time-user-workflow)
+  - [Dashboard & Forensic Analysis Guide](#dashboard--forensic-analysis-guide)
+  - [Stopping & Restarting](#stopping-the-application)
+  - [Troubleshooting](#troubleshooting)
+- [👨‍💻 Developer Quick Start](#-developer-quick-start)
+  - [Repository Architecture](#repository-architecture)
+  - [Feature & Code Locator](#feature--code-locator)
+  - [Database Migrations (Alembic)](#database-migrations-alembic)
+  - [Running Automated Tests](#running-tests)
+- [📖 Project Overview & Problem Statement](#-project-overview)
+- [💡 Proposed Solution & Key Features](#-proposed-solution)
+- [🏗️ System Architecture](#️-system-architecture)
+- [📧 Email Analysis Pipeline](#-email-analysis-pipeline)
+- [🛠️ Technology Stack](#️-technology-stack)
+- [📚 Module Reference](#-module-reference)
+- [📡 API Reference](#-api-reference)
+- [🗄️ Database Architecture](#️-database-architecture)
+- [🤖 AI / ML Threat Classification](#-ai--ml)
+- [📊 Explainable Multi-Signal Risk Engine](#-risk-scoring)
+- [🔗 Threat Correlation Graph & Campaign Detection](#-correlation-graph)
+- [📋 Evidence Chain of Custody & Tamper-Evidence](#-evidence--chain-of-custody)
+- [🐳 Docker Architecture](#-docker-architecture)
+- [🗺️ Supabase Deployment](#️-supabase-deployment)
+- [📋 SIH Requirement Mapping](#-sih-requirement-mapping)
+- [📊 Project Status & Changelog](#-project-status)
+- [🤝 Contributing & License](#-contributing)
 
 ---
 
@@ -8,23 +59,26 @@
 
 ### What This Application Does
 
-**MailTrace** is an email forensic intelligence platform. It helps security analysts, incident responders, and IT teams investigate suspicious emails.
+**MailTrace** is a comprehensive, production-grade email forensic intelligence platform built to investigate suspicious emails, spear-phishing attacks, and Business Email Compromise (BEC) campaigns.
 
-**What happens after you upload an email:**
+**What happens after you upload a `.eml` email file:**
 
-1. The `.eml` file is parsed — all headers, body text, and attachments are extracted.
-2. A SHA-256 evidence hash is computed on the raw file bytes (for tamper-evident chain of custody).
-3. Email authentication is checked (SPF, DKIM, DMARC) via independent DNS lookups.
-4. The email relay path (Received headers) is reconstructed and analyzed for anomalies.
-5. All IP addresses found in the headers are geolocated and ASN-resolved.
-6. Domains are checked for brand impersonation, homoglyphs, and suspicious TLDs.
-7. URLs in the body are extracted and analyzed for phishing indicators.
-8. Attachments are analyzed for dangerous extensions and MIME mismatches (never executed).
-9. An ML classifier (TF-IDF + Logistic Regression) categorizes the email.
-10. A weighted risk engine combines all signals into a 0–100 risk score with full explainability.
-11. A forensic PDF report can be generated with all findings.
+1. **Tamper-Evident SHA-256 Hashing:** Raw byte SHA-256 evidence fingerprint is computed before parsing to preserve the cryptographic chain of custody.
+2. **RFC 822 / MIME Parsing:** Headers, body (plain text & HTML), inline components, and attachments are parsed and isolated safely.
+3. **Independent Authentication Checks:** Independent DNS queries evaluate SPF records, verify DKIM cryptographic signatures (`dkimpy`), and evaluate DMARC policy alignment.
+4. **Relay Path Reconstruction:** The complete transit hop path is parsed from `Received` headers, detecting delays, hop anomalies, and suspicious relays.
+5. **IP Intelligence & Geolocation:** All extracted IP addresses are analyzed for public/private status, reverse DNS, ASN, and GeoIP location.
+6. **Domain & Lookalike Intelligence:** Sender and transit domains are inspected for typosquatting, suspicious TLDs, and Unicode homoglyph attacks.
+7. **Phishing URL Analysis:** URLs extracted from body and headers are scanned for IP-based hosts, punycode, open redirects, and URL shorteners without ever visiting malicious hosts.
+8. **Inert Attachment Threat Analysis:** Attachments are stored as inert raw binary bytes (never executed), fingerprinting files via SHA-256, verifying MIME consistency, and detecting dangerous double extensions (e.g. `.pdf.exe`).
+9. **Machine Learning Classification:** A TF-IDF + Logistic Regression model categorizes threats (`legitimate`, `suspicious`, `phishing`, `spammer`) and surfaces explainable risk triggers.
+10. **Weighted Multi-Signal Risk Engine:** 8 distinct categories are scored (0–100) with detailed FACT → OBSERVATION → INFERENCE → CONFIDENCE explainability breakdowns.
+11. **Threat Correlation Matrix:** Emails, shared IPs, domains, and malicious attachments are mapped into an interactive Cytoscape.js correlation graph to detect coordinated threat campaigns.
+12. **Incident Case Dossiers:** Suspicious emails can be linked into investigative case files (`/cases`).
+13. **Cryptographic Audit Ledger:** An immutable, append-only hash chain tracks every action with one-click real-time integrity verification (`/audit`).
+14. **Forensic Report Generation:** Export full court-ready forensic reports in PDF format (via WeasyPrint) with graceful HTML download fallback.
 
-**Who uses it:** Security analysts, SOC teams, incident responders, and IT administrators.
+**Target Users:** SOC analysts, digital forensics and incident response (DFIR) specialists, cybersecurity students, and IT administrators.
 
 ---
 
@@ -32,14 +86,14 @@
 
 | Software | Required Version | Why It Is Needed | How to Verify |
 |---|---|---|---|
-| **Git** | Any recent version | Clone the repository | `git --version` |
-| **Python** | ≥ 3.11 | Backend server and forensics engine | `python3 --version` |
-| **Node.js** | ≥ 18 (LTS recommended) | Frontend build and dev server | `node --version` |
-| **npm** | Comes with Node.js | Install frontend dependencies | `npm --version` |
-| **Docker** | ≥ 20.10 (optional) | Run PostgreSQL database | `docker --version` |
-| **Docker Compose** | ≥ 2.0 (optional) | Orchestrate services | `docker compose version` |
+| **Git** | Any recent version | Clone and manage the codebase | `git --version` |
+| **Docker** | ≥ 20.10 | Run PostgreSQL and full-stack containers | `docker --version` |
+| **Docker Compose** | ≥ 2.0 | Orchestrate database, backend, and frontend | `docker compose version` |
+| **Python** | ≥ 3.11 (3.12+ recommended) | Backend FastAPI server, forensics engine, and ML | `python3 --version` |
+| **Node.js** | ≥ 20 (LTS recommended) | Frontend build system and development server | `node --version` |
+| **npm** | ≥ 10.0 | Manage frontend dependencies | `npm --version` |
 
-**Docker is optional.** You can run the backend in SQLite mode without Docker.
+> ⚠️ **PostgreSQL is required.** MailTrace strictly enforces PostgreSQL (version 15+ or 16). SQLite is explicitly disabled and rejected on startup to guarantee relational integrity, JSON querying, and concurrency.
 
 ---
 
@@ -47,113 +101,108 @@
 
 ```bash
 git clone <repository-url>
-cd <project-directory>
+cd mailtrace
 ```
 
 ---
 
 ### Environment Setup
 
-MailTrace uses environment variables for configuration. A `.env` file in the `backend/` directory is optional — all variables have defaults.
+MailTrace uses environment variables for configuration. All variables have sensible defaults for local development.
 
-#### Option A: SQLite Mode (Simplest — No Docker Required)
+Copy the example environment configuration:
 
-No `.env` file needed. The provided `run.sh` script sets `DATABASE_URL` to SQLite and enables demo mode automatically.
+```bash
+cp backend/.env.example backend/.env
+```
 
-#### Option B: PostgreSQL via Docker
+#### Environment Variables Reference
 
-Create `backend/.env` with the following:
+| Variable | Required? | Purpose | Default |
+|---|---|---|---|
+| `DATABASE_URL` | Yes | PostgreSQL connection string | `postgresql+psycopg2://mailtrace:mailtrace@localhost:5432/mailtrace` |
+| `DEMO_MODE` | No | Enable offline deterministic fixtures for DNS/GeoIP | `true` |
+| `MAX_UPLOAD_SIZE_MB` | No | Maximum allowed `.eml` upload file size in MB | `10` |
+| `GEOIP_DB_DIR` | No | Directory containing MaxMind GeoLite2 `.mmdb` files | `/usr/share/GeoIP` |
+| `SUPABASE_URL` | Optional | Supabase project URL (for Supabase deployment) | `""` |
+| `SUPABASE_ANON_KEY` | Optional | Supabase client anon key | `""` |
+| `SUPABASE_SERVICE_ROLE_KEY` | Optional | Supabase service role key (backend only) | `""` |
 
-| Variable | Required? | Purpose | Default | Example |
-|---|---|---|---|---|
-| `DATABASE_URL` | No | PostgreSQL connection string | `postgresql+psycopg2://mailtrace:mailtrace@localhost:5432/mailtrace` | `postgresql+psycopg2://mailtrace:mailtrace@localhost:5432/mailtrace` |
-| `DEMO_MODE` | No | Enable offline demo fixtures | `false` | `true` |
-| `MAX_UPLOAD_SIZE_MB` | No | Max uploaded file size in MB | `10` | `20` |
-| `GEOIP_DB_DIR` | No | Directory containing GeoLite2 `.mmdb` files | `/usr/share/GeoIP` | `./data/geoip` |
-
-> **Secrets:** Never commit passwords, API keys, or tokens to the repository. The defaults above are for local development only.
+> 🔒 **Security Notice:** Never commit actual API keys, database credentials, or service role keys to version control.
 
 ---
 
 ### Database Setup
 
-#### Option A: SQLite (No Setup Required)
-
-If using `run.sh`, the SQLite database file `mailtrace.db` is created automatically in `backend/` on first run. No migrations needed — tables are created at startup.
-
-#### Option B: PostgreSQL via Docker
+#### Start PostgreSQL via Docker Compose
 
 ```bash
 docker compose up -d db
 ```
 
-This starts a PostgreSQL 16 container. The database is created automatically from the `docker-compose.yml` environment variables. Tables are created on backend startup (no migration step required).
+This starts a PostgreSQL 16 container with a persistent volume (`pgdata`). The database and credentials are automatically configured.
 
-Verify the database is running:
+To verify the database container is healthy:
 
 ```bash
 docker compose ps db
 ```
 
-You should see the `db` service with status `Up`.
+Expected status: `Up (healthy)`.
 
 ---
 
-### Required Data Files
+### Required Data Files (Optional GeoIP)
 
-| File | Mandatory? | Purpose | How to Obtain | What Happens If Missing |
+| File | Mandatory? | Purpose | Source / Placement | Fallback Behavior |
 |---|---|---|---|---|
-| **GeoLite2-City.mmdb** | No | IP geolocation lookups | Free from [MaxMind](https://www.maxmind.com/en/geolite2/signup). Place in `backend/data/geoip/` | IP geolocation returns `null`. All other features work normally. |
-| **GeoLite2-ASN.mmdb** | No | ASN / organization lookups | Same source as above. Place in `backend/data/geoip/` | ASN data returns `null`. All other features work normally. |
+| **GeoLite2-City.mmdb** | No | IP city/coordinate lookups | [MaxMind Free Signup](https://www.maxmind.com/en/geolite2/signup) → Place in `backend/data/geoip/` | Geolocation returns `null`; non-Geo IP intelligence remains active. |
+| **GeoLite2-ASN.mmdb** | No | Autonomous System Number & Org lookups | MaxMind Free Signup → Place in `backend/data/geoip/` | ASN returns `null`; non-ASN IP analysis remains active. |
 
-Without these files, the platform runs fully functional. IP intelligence will include warnings that geolocation data is unavailable.
+*Even without GeoIP databases, the entire platform is fully functional in offline/demo mode.*
 
 ---
 
 ### Start the Application
 
-#### Method 1: Quick Start with SQLite (Recommended for First-Time Users)
+You can start MailTrace using any of the following three workflows:
 
-```bash
-cd backend
-bash run.sh
-```
+#### Method 1: Full-Stack Docker Compose (Recommended)
 
-This starts the backend on port 8000 with SQLite and demo mode enabled. **No Docker required.**
-
-Then in a **second terminal**:
-
-```bash
-cd frontend
-npm install
-npm run dev
-```
-
-#### Method 2: Docker Compose (Full Stack with PostgreSQL)
+Orchestrate the database, backend, and production frontend with a single command:
 
 ```bash
 docker compose up --build
 ```
 
-This builds and starts the backend and PostgreSQL. The frontend must be started separately (see below).
+This brings up:
+1. **db**: PostgreSQL 16 on `localhost:5432` with healthchecks and persistent storage.
+2. **backend**: FastAPI on `http://localhost:8000` (auto-initializes database tables upon healthy connection to db).
+3. **frontend**: Production multi-stage Nginx container on `http://localhost:3000` with reverse proxy for `/api/` and `/health`.
 
-Then in a **second terminal** for the frontend:
+#### Method 2: Hybrid Development (Docker DB + Hot-Reload Local Servers)
 
+**Terminal 1 — Database:**
+```bash
+docker compose up -d db
+```
+
+**Terminal 2 — FastAPI Backend:**
+```bash
+cd backend
+bash run.sh
+```
+*(Runs uvicorn on `http://localhost:8000` with auto-reload).*
+
+**Terminal 3 — React Frontend:**
 ```bash
 cd frontend
 npm install
 npm run dev
 ```
+*(Runs Vite dev server on `http://localhost:5173` with instant HMR).*
 
-#### Method 3: Manual Setup
-
-**Terminal 1 — Database (if using PostgreSQL):**
-
-```bash
-docker compose up -d db
-```
-
-**Terminal 2 — Backend:**
+#### Method 3: Manual Python Virtual Environment Setup
 
 ```bash
 cd backend
@@ -163,567 +212,162 @@ pip install -r requirements.txt
 python -m uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 ```
 
-**Terminal 3 — Frontend:**
-
-```bash
-cd frontend
-npm install
-npm run dev
-```
-
 ---
 
 ### Verify the Installation
 
-Run each of these in a new terminal after starting the application:
+Run the health check endpoint:
 
 ```bash
-# 1. Backend health check
 curl http://localhost:8000/health
-# Expected: {"status":"ok"}
-
-# 2. API docs
-curl -s http://localhost:8000/docs | head -5
-# Expected: Swagger UI HTML (if using a browser)
-
-# 3. Frontend
-curl -s http://localhost:5173 | head -5
-# Expected: HTML page with title "MailTrace — Email Forensic Intelligence"
+# Expected response: {"status":"ok"}
 ```
 
-Checklist:
-
+Verification Checklist:
 ```
-✓ Database running (if PostgreSQL)
-✓ Backend running on port 8000
-✓ Frontend running on port 5173
-✓ API health check returns {"status":"ok"}
-✓ API docs accessible at http://localhost:8000/docs
+[✓] PostgreSQL 16 running on port 5432
+[✓] FastAPI Backend running on port 8000 (status: ok)
+[✓] Frontend accessible at http://localhost:3000 (Docker) or http://localhost:5173 (Dev)
+[✓] Interactive API docs accessible at http://localhost:8000/docs
+[✓] ReDoc API docs accessible at http://localhost:8000/redoc
 ```
 
 ---
 
 ### Local URLs
 
-| Service | URL | Purpose |
+| Service | Local URL | Description |
 |---|---|---|
-| **Frontend** | `http://localhost:5173` | Web application UI |
-| **Backend API** | `http://localhost:8000` | REST API |
-| **API Docs (Swagger)** | `http://localhost:8000/docs` | Interactive API documentation |
-| **API Docs (ReDoc)** | `http://localhost:8000/redoc` | Alternative API documentation |
-| **Database** | `localhost:5432` | PostgreSQL (if using Docker) |
+| **Production Frontend (Docker)** | `http://localhost:3000` | Nginx reverse-proxied React 19 web application |
+| **Development Frontend (Vite)** | `http://localhost:5173` | Vite dev server with Hot Module Replacement |
+| **Backend REST API** | `http://localhost:8000` | FastAPI core application |
+| **Swagger UI Documentation** | `http://localhost:8000/docs` | Interactive OpenAPI documentation and test runner |
+| **ReDoc Documentation** | `http://localhost:8000/redoc` | Clean, readable OpenAPI documentation |
+| **PostgreSQL Database** | `localhost:5432` | Primary database (`mailtrace` / `mailtrace_test`) |
 
 ---
 
 ### First-Time User Workflow
 
-#### Step 1: Open the Application
+#### 1. Open the Web Application
+Open `http://localhost:3000` (or `http://localhost:5173` in development mode) in your web browser. Note the live green **Backend: Online** health status badge in the navigation sidebar.
 
-Navigate to `http://localhost:5173` in your browser. You will see the **Upload Email** page with a drag-and-drop area.
+#### 2. Upload a `.eml` Email File
+On the **Upload Email** screen (`/`):
+- Drag and drop any raw `.eml` file into the upload zone or click to select from your file manager.
+- The client validates that the file has a `.eml` extension and is within the 10 MB upload guard.
+- The backend immediately computes the raw byte **SHA-256 evidence fingerprint** and stores headers and body parts safely.
 
-#### Step 2: Upload a `.eml` File
+> **Where to find a `.eml` sample:**
+> - **Gmail:** Open an email → click the 3 dots (More) → **Show original** → **Download Original**.
+> - **Outlook:** Drag an email message onto your desktop or save as `.eml`.
+> - **Apple Mail:** File → Save As → Raw Message Source (`.eml`).
 
-Click the upload area or drag a `.eml` file onto it. The file is validated (must end in `.eml`, max 10 MB).
+#### 3. Automatic Navigation to Investigation Dossier
+Upon upload, you are automatically redirected to `/emails/:id`. You will see:
+- Message Subject, Sender, Display Name, Date, and Message-ID.
+- The immutable SHA-256 evidence hash and file size.
+- Pre-parsed MIME structure, headers, and safe attachment listings.
 
-> **Don't have a `.eml` file?** Save any suspicious email as a `.eml` file from your email client. In Gmail: open the email → three-dot menu → "Show original" → "Download Original". In Outlook: drag the email to your desktop.
+#### 4. Run Full Forensic Analysis
+Click the **"Run Full Analysis"** button to trigger all diagnostic engines concurrently:
+- **Authentication Engine:** SPF, DKIM, and DMARC verification.
+- **Relay Path Forensics:** Hop-by-hop Received header reconstruction and delay anomaly analysis.
+- **IP & ASN Intelligence:** Geolocation and Autonomous System mapping.
+- **Domain Intelligence:** Homoglyph detection, typosquatting checks, and suspicious TLD flags.
+- **URL Phishing Inspection:** Embedded links parsed, checked for IP hosts, shorteners, and abnormal structures.
+- **Attachment Threat Analysis:** MIME mismatches and dangerous execution extensions flagged.
+- **Machine Learning Threat Classifier:** Predictions across 4 threat classes with explainable indicator breakdown.
+- **Multi-Signal Risk Score:** Comprehensive 0–100 composite risk score with severity grading.
 
-#### Step 3: Wait for Parsing
-
-The email is parsed instantly — headers, body, and attachments are extracted. You are redirected to the email detail page.
-
-#### Step 4: Click "Run Full Analysis"
-
-On the email detail page, click the **"Run Full Analysis"** button. This triggers all forensic modules simultaneously:
-
-- SPF / DKIM / DMARC authentication
-- Received header relay path analysis
-- IP intelligence (geolocation + ASN)
-- Domain intelligence (lookalikes, homoglyphs)
-- URL analysis
-- Attachment analysis
-- ML classification
-- Risk scoring
-
-#### Step 5: Review the Results
-
-Scroll through the collapsible sections to review:
-
-1. **Risk Assessment** — Overall score (0–100) and level (LOW/MEDIUM/HIGH/CRITICAL)
-2. **Email Metadata** — Subject, sender, recipients, SHA-256 evidence hash
-3. **AI Classification** — ML prediction with probabilities and explainable signals
-4. **Authentication** — SPF, DKIM, DMARC results with domain and details
-5. **Received Path** — Relay hops, public/private IPs, anomalies
-6. **Domain Intelligence** — Suspicious TLDs, lookalikes, homoglyphs
-7. **URLs** — IP-based URLs, shorteners, suspicious paths
-8. **Attachments** — Dangerous extensions, double extensions, MIME mismatches
-9. **All Headers** — Every raw header in original order
+#### 5. Review Findings, Correlate, and Export
+- **Review Breakdown:** Inspect individual risk categories (ML, Authentication, Domain, URL, Attachments, Hops).
+- **Export Forensic Report:** Click **"📄 Export Report"** to download an official investigation dossier in PDF (or HTML) format.
+- **Verify Evidence Chain:** Click **"🛡️ Verify Evidence"** to execute a cryptographic proof validating that the SHA-256 hash chain matches the raw uploaded bytes.
+- **Correlate with Campaign Graph:** Click **"🌐 Add to Graph"** to link the email to the entity correlation matrix.
+- **Organize Incident Cases:** Navigate to `/cases` to group related emails into incident dossiers.
+- **Inspect Audit Trail:** Navigate to `/audit` and click **"Verify Hash Chain Integrity"** to validate the tamper-evident system audit log.
 
 ---
 
-### Dashboard Guide
+### Dashboard & Forensic Analysis Guide
 
-#### Risk Score (0–100)
+#### Composite Risk Score (0–100)
 
-The risk score is a weighted combination of all analysis signals. It does **not** prove the email is malicious — it is an inference.
+| Score Range | Severity Level | Visual Badge | Meaning & Recommended Action |
+|---|---|---|---|
+| **0 – 24** | **LOW** | 🟢 Green | Clean email. Authentication passes; no anomalous domains or hostile payloads. |
+| **25 – 49** | **MEDIUM** | 🟡 Yellow | Suspicious indicators present (e.g. minor SPF softfail or unusual relay delays). Review recommended. |
+| **50 – 74** | **HIGH** | 🟠 Orange | Multiple high-risk signals (failed authentication, lookalike domain, suspicious URLs). Likely phishing. |
+| **75 – 100** | **CRITICAL** | 🔴 Red | High-confidence malicious threat (spoofed brand, malicious attachment, severe auth failure, high ML phishing score). Quarantine immediately. |
 
-| Range | Level | Meaning |
+#### Email Authentication Statuses
+
+| Check | Result | Forensic Interpretation |
 |---|---|---|
-| 0–24 | **LOW** | Few risk signals detected. Likely legitimate. |
-| 25–49 | **MEDIUM** | Some suspicious indicators. Worth investigating. |
-| 50–74 | **HIGH** | Multiple risk signals. Likely phishing or fraud. |
-| 75–100 | **CRITICAL** | Many strong risk signals. Treat as confirmed threat. |
-
-#### Classification
-
-The ML classifier assigns one of four labels:
-
-| Label | Meaning |
-|---|---|
-| **legitimate** | Normal business or personal email |
-| **suspicious** | Some indicators but not conclusive |
-| **phishing** | Strong indicators of credential theft or fraud |
-| **spammer** | Unsolicited bulk email |
-
-Each label comes with a confidence score (0–100%) and probability distribution across all classes.
-
-#### SPF (Sender Policy Framework)
-
-SPF checks whether the sending server is authorized to send email for the domain.
-
-| Result | Meaning |
-|---|---|
-| **PASS** | The sending IP is authorized by the domain's SPF record |
-| **FAIL** | The sending IP is NOT authorized — strong phishing indicator |
-| **SOFTFAIL** | The sending IP is not authorized but the domain policy is permissive |
-| **NONE** | No SPF record published by the domain |
-| **TEMPERROR** | DNS lookup failed temporarily |
-
-**Important:** SPF validates the *envelope sender* (Return-Path), NOT the visible From address.
-
-#### DKIM (DomainKeys Identified Mail)
-
-DKIM verifies a cryptographic signature attached by the sending server.
-
-| Result | Meaning |
-|---|---|
-| **PASS** | Signature verified against the domain's public key |
-| **FAIL** | Signature verification failed |
-| **NONE** | No DKIM-Signature header found |
-| **PERMERROR** | DKIM key lookup failed permanently |
-
-#### DMARC (Domain-based Message Authentication, Reporting & Conformance)
-
-DMARC combines SPF and DKIM results and checks alignment with the visible From domain.
-
-| Result | Meaning |
-|---|---|
-| **PASS** | Either SPF or DKIM passed AND aligned with the From domain |
-| **FAIL** | Neither SPF nor DKIM passed with alignment |
-| **NONE** | No DMARC policy published by the From domain |
-
-#### Received Chain
-
-The relay path shows every mail server the email passed through. Read from bottom to top (chronological order):
-
-- Each hop shows the source hostname, IP, protocol, and timestamp.
-- **Public IPs** indicate internet infrastructure.
-- **Private IPs** indicate internal corporate servers.
-- **Anomalies** flagged: missing headers, non-monotonic timestamps, unusually many hops, duplicate IPs.
-
-#### IP Intelligence
-
-For each public IP in the relay path:
-
-- **Geolocation** — Country, city, lat/lon (via MaxMind GeoLite2). This shows *infrastructure location*, not attacker physical location.
-- **ASN** — Autonomous System Number and organization (who operates the network).
-
-#### Domain Intelligence
-
-Domains found in headers and body are analyzed for:
-
-- **Suspicious TLDs** — `.xyz`, `.top`, `.club`, etc.
-- **Homoglyphs** — Non-Latin characters that look like Latin letters (Cyrillic tricks).
-- **Lookalike domains** — Levenshtein distance comparison against known brands.
-- **Punycode** — Internationalized domain names that may hide the real domain.
-
-#### URL Analysis
-
-URLs extracted from the email body are checked for:
-
-- **IP-based URLs** — Using an IP address instead of a domain name.
-- **URL shorteners** — `bit.ly`, `tinyurl.com`, `t.co`, etc.
-- **Suspicious paths** — `/login`, `/verify`, `/signin`, `/password`.
-- **Excessive subdomains** — More than 3 levels of subdomains.
-- **Punycode** — Internationalized domain names in URLs.
-
-#### Attachments
-
-Attachments are analyzed **without executing them**:
-
-- **Dangerous extensions** — `.exe`, `.scr`, `.vbs`, `.bat`, `.ps1`, etc.
-- **Double extensions** — `invoice.pdf.exe` (disguised executables).
-- **MIME mismatches** — MIME type doesn't match the file extension.
-- **SHA-256** — Each attachment's hash is recorded for evidence tracking.
-
-#### Correlation Graph
-
-The correlation graph shows relationships between emails, senders, domains, IPs, and cases. It reveals:
-
-- Shared infrastructure across multiple emails (same IP or domain).
-- Campaign patterns (multiple emails from the same sender or domain).
-- Case associations.
-
-#### Evidence & Chain of Custody
-
-Every email's evidence integrity is maintained through:
-
-- **SHA-256 hash** — Computed on the raw uploaded bytes before any parsing.
-- **Evidence chain** — Append-only hash chain recording every action (upload, analyze, export).
-- **Audit log** — Immutable log of all system actions with hash-chain integrity.
-
-You can verify chain integrity via:
-- `GET /api/evidence/verify/{email_id}` — Verify evidence chain for a specific email.
-- `POST /api/audit/verify` — Verify the global audit log integrity.
-
----
-
-### How to Analyze a Suspicious Email
-
-> **Scenario:** You receive an email claiming to be from your bank, asking you to "verify your account immediately."
-
-#### Step 1: Preserve the Original
-
-- Do NOT delete the email.
-- Save it as a `.eml` file (use "Download Original" or "Show Original" in your email client).
-- Do NOT modify the file in any way.
-
-#### Step 2: Upload to MailTrace
-
-1. Open `http://localhost:5173`.
-2. Drag the `.eml` file onto the upload area.
-3. Wait for parsing to complete.
-
-#### Step 3: Run Full Analysis
-
-Click "Run Full Analysis" on the email detail page.
-
-#### Step 4: Review Authentication
-
-Check SPF, DKIM, and DMARC. If all are FAIL, the email is very likely spoofed.
-
-#### Step 5: Check the Sender Identity
-
-Look at the "From" address and "Sender Name." If the display name says "Bank of America" but the email address is `security@b4nk-secure.xyz`, that's a major red flag.
-
-#### Step 6: Review the Relay Path
-
-Check the Received headers. Unusual servers or many hops may indicate the email was routed through attacker-controlled infrastructure.
-
-#### Step 7: Review IP and Domain Intelligence
-
-Look for geolocation warnings, suspicious TLDs, lookalike domains, or homoglyphs.
-
-#### Step 8: Check URLs
-
-If the email contains links, review them. IP-based URLs and shorteners are suspicious.
-
-#### Step 9: Check Attachments
-
-Dangerous extensions (`.exe`, `.scr`) or double extensions (`document.pdf.exe`) are strong indicators of malware.
-
-#### Step 10: Review Risk Factors
-
-The risk engine shows exactly which signals contributed to the score and how much.
-
-#### Step 11: Check Related Cases
-
-If you have uploaded multiple suspicious emails, use the correlation graph to find shared infrastructure.
-
-#### Step 12: Generate a Forensic Report
-
-Download the PDF report from `GET /api/reports/{email_id}/pdf` for documentation and evidence preservation.
-
----
-
-### Evidence Handling Instructions
-
-> **IMPORTANT — When using MailTrace for forensic investigation:**
-
-1. **Preserve the original `.eml` file.** The SHA-256 hash is computed on the raw bytes.
-2. **Do NOT edit the file before upload.** Any modification changes the evidence hash.
-3. **Record the evidence SHA-256** displayed on the email detail page.
-4. **Record the email ID** (`#N`) for case tracking.
-5. **Do NOT execute suspicious attachments.** MailTrace stores them inertly (never executed or rendered).
-6. **Do NOT click suspicious URLs.** The platform analyzes them safely without visiting them.
-7. **Verify chain integrity** using `POST /api/audit/verify` and `GET /api/evidence/verify/{email_id}`.
-
-MailTrace preserves evidence through an append-only hash chain. Every action (upload, analysis, export) is recorded with a cryptographic hash linking to the previous entry. Tampering with any record breaks the chain.
-
----
-
-### Running the Offline Demo
-
-MailTrace includes a demo mode that replaces external intelligence lookups with deterministic fixtures.
-
-**To enable demo mode:**
-
-1. Set `DEMO_MODE=true` in your environment or `.env` file.
-2. Or use `bash run.sh` in the `backend/` directory (sets it automatically).
-
-**What demo mode does:**
-
-- Core parsing, authentication (SPF/DKIM/DMARC), and ML classification work normally.
-- GeoIP lookups return stub data (no MaxMind database required).
-- Domain intelligence and URL analysis work normally.
-- Risk scoring works normally.
-
-**What you need:**
-
-- The backend server running.
-- Any `.eml` file to upload.
-
-**How it differs from live mode:**
-
-- No external DNS queries for SPF/DKIM/DMARC (uses header claims).
-- No GeoIP database required.
-- All other features work identically.
+| **SPF** | `PASS` | Sending IP is explicitly authorized by sender domain's SPF DNS record. |
+| **SPF** | `FAIL` / `SOFTFAIL` | Sending IP is NOT authorized. Strong indicator of spoofing or unauthorized relay. |
+| **DKIM** | `PASS` | Digital cryptographic signature verified against public key published in DNS. |
+| **DKIM** | `FAIL` | Signature verification failed — message content or headers were modified in transit. |
+| **DMARC** | `PASS` | SPF or DKIM passed AND the authenticated domain aligns with the `From:` header domain. |
+| **DMARC** | `FAIL` | Both SPF and DKIM failed alignment with the `From:` header. Sender is unverified. |
 
 ---
 
 ### Stopping the Application
 
-#### If using `run.sh`:
-
-Press `Ctrl+C` in the terminal running the backend.
-
-#### If using Docker Compose:
+Press `Ctrl+C` in your active terminal windows.
 
 ```bash
+# Stop Docker services
 docker compose down
-```
 
-This stops all containers but **preserves** the database data.
-
-To also delete the database volume:
-
-```bash
+# To also delete persistent database volume (Warning: wipes all emails!):
 docker compose down -v
 ```
-
-> ⚠️ **Warning:** `docker compose down -v` deletes the PostgreSQL data volume. All analyzed emails will be lost.
-
-#### If running manually:
-
-Press `Ctrl+C` in each terminal (backend, then frontend).
 
 ---
 
 ### Restarting the Application
 
 ```bash
-# Quick start (SQLite mode)
-cd backend
-bash run.sh
+# Start database
+docker compose up -d db
 
-# Then in another terminal
-cd frontend
-npm run dev
+# Start backend
+cd backend && bash run.sh
+
+# Start frontend (in a separate terminal)
+cd frontend && npm run dev
 ```
-
-```bash
-# Docker Compose
-docker compose up
-
-# Then in another terminal
-cd frontend
-npm run dev
-```
-
-No rebuild is needed unless you changed dependencies or code.
-
----
-
-### Updating the Application
-
-```bash
-git pull
-
-# Backend — reinstall dependencies if requirements changed
-cd backend
-pip install -r requirements.txt
-
-# Frontend — reinstall if package.json changed
-cd frontend
-npm install
-```
-
-No database migration step is required — tables are created automatically at startup.
 
 ---
 
 ### Troubleshooting
 
-#### Backend Won't Start
-
-**Symptom:** `ModuleNotFoundError` or import errors on startup.
-
-**Cause:** Missing Python dependencies.
-
-**Fix:**
+#### Backend Port 8000 in Use
 ```bash
-cd backend
-pip install -r requirements.txt
-```
-
-**Verification:** `python -c "import fastapi; print('OK')"`
-
----
-
-#### Port Already in Use (Address already in use)
-
-**Symptom:** `[Errno 98] Address already in use` when starting the server.
-
-**Cause:** Another process is using port 8000.
-
-**Fix:**
-```bash
-# Kill whatever is using port 8000
 lsof -ti :8000 | xargs kill -9
-# Or use run.sh which does this automatically
-bash run.sh
 ```
 
----
+#### Database Connection Refused
+1. Verify container status: `docker compose ps db`
+2. Check logs: `docker compose logs db`
+3. If connecting from host, ensure `DATABASE_URL` uses `localhost:5432`. If connecting inside Docker Compose, ensure it uses `db:5432`.
 
-#### Frontend Won't Start
+#### Stale Python Bytecode / Caches
+```bash
+find backend -name "__pycache__" -exec rm -rf {} +
+find backend -name "*.pyc" -delete
+```
 
-**Symptom:** `npm run dev` fails with errors.
-
-**Cause:** Missing Node.js dependencies.
-
-**Fix:**
+#### Frontend Package Installation Issues
 ```bash
 cd frontend
-rm -rf node_modules
+rm -rf node_modules package-lock.json
 npm install
 npm run dev
 ```
-
-**Verification:** Open `http://localhost:5173` — you should see the MailTrace UI.
-
----
-
-#### Database Connection Failure
-
-**Symptom:** `sqlalchemy.exc.OperationalError: could not connect to server` or `psycopg2.OperationalError`.
-
-**Cause:** PostgreSQL is not running or `DATABASE_URL` is wrong.
-
-**Fix:**
-1. If using Docker: `docker compose up -d db`
-2. If using SQLite: set `DATABASE_URL=sqlite:///./mailtrace.db`
-3. Check the connection string in your `.env` file.
-
-**Verification:** `docker compose ps db` should show status `Up`.
-
----
-
-#### Stale Python Cache (old code running after edits)
-
-**Symptom:** Bug fixes don't take effect even after editing source files. Server still shows old behavior.
-
-**Cause:** Python's `__pycache__` directories contain compiled bytecode from previous runs.
-
-**Fix:**
-```bash
-# Delete all Python cache files
-find . -name "__pycache__" -exec rm -rf {} +
-# Restart the server
-bash run.sh
-```
-
-This is handled automatically by `run.sh`.
-
----
-
-#### Docker Problems
-
-**Symptom:** `docker compose up` fails.
-
-**Fix:**
-1. Ensure Docker is running: `docker info`
-2. Rebuild: `docker compose up --build`
-3. Check logs: `docker compose logs db` or `docker compose logs backend`
-
----
-
-#### Missing Environment Variable
-
-**Symptom:** `pydantic_settings.ValidationError` on backend startup.
-
-**Cause:** A required environment variable is not set.
-
-**Fix:** Create `backend/.env` with the required variables. See the [Environment Configuration](#environment-configuration) section.
-
----
-
-#### Missing GeoIP Database
-
-**Symptom:** IP intelligence returns `null` for geolocation. Logs show "GeoLite2-City not found."
-
-**Cause:** MaxMind GeoLite2 `.mmdb` files are not present.
-
-**Fix:** Download from [MaxMind](https://www.maxmind.com/en/geolite2/signup) and place in `backend/data/geoip/`.
-
-**Impact:** All other features work. Only IP geolocation and ASN data are missing.
-
----
-
-#### Upload Failure
-
-**Symptom:** `400` or `413` error when uploading.
-
-**Fix:**
-- Ensure the file ends in `.eml`.
-- Ensure the file is under 10 MB (configurable via `MAX_UPLOAD_SIZE_MB`).
-
----
-
-#### CORS Issue / API Unreachable from Frontend
-
-**Symptom:** Frontend shows network errors; browser console shows CORS errors.
-
-**Cause:** Frontend is not proxying to the backend.
-
-**Fix:** The Vite config (`frontend/vite.config.js`) proxies `/api` and `/health` to `http://localhost:8000`. Ensure the backend is running on port 8000.
-
----
-
-#### PDF Generation Failure
-
-**Symptom:** `GET /api/reports/{id}/pdf` returns HTML instead of PDF.
-
-**Cause:** `weasyprint` is not installed.
-
-**Fix:**
-```bash
-pip install weasyprint
-```
-
-**Impact:** The endpoint returns an HTML version of the report as a fallback.
-
----
-
-#### Dependency Installation Failure
-
-**Symptom:** `pip install` or `npm install` fails.
-
-**Fix:**
-- Ensure you have the correct Python/Node.js version.
-- For Python: try `pip install --upgrade pip` first.
-- For Node.js: try `rm -rf node_modules && npm install`.
-
----
 
 ---
 
@@ -732,706 +376,564 @@ pip install weasyprint
 ### Repository Architecture
 
 ```
-├── backend/                  # Python/FastAPI backend
-│   ├── app/
-│   │   ├── main.py           # FastAPI app, router registration, lifespan
-│   │   ├── config.py         # Pydantic Settings (env vars)
-│   │   ├── db.py             # SQLAlchemy engine, session, Base
-│   │   ├── models.py         # ORM models (Email, Case, AuditLog, EvidenceChain, etc.)
-│   │   ├── utils.py          # Shared utilities
-│   │   ├── schemas/          # Pydantic response schemas
-│   │   ├── routers/          # API endpoint modules
-│   │   ├── forensics/        # Analysis engines (SPF, DKIM, DMARC, IP, domain, URL, etc.)
-│   │   ├── ml/               # ML classifier (TF-IDF + Logistic Regression)
-│   │   └── parsers/          # MIME email parser
-│   ├── tests/                # pytest test suite
-│   ├── data/geoip/           # GeoLite2 database files (user-provided)
-│   ├── requirements.txt      # Python dependencies
-│   ├── pyproject.toml        # Project metadata + pytest config
-│   ├── Dockerfile            # Backend Docker image
-│   └── run.sh                # Quick-start script (SQLite mode)
-├── frontend/                 # React/Vite frontend
-│   ├── src/
-│   │   ├── App.jsx           # Router, sidebar, layout
-│   │   ├── api.js            # Axios API client
-│   │   ├── index.css         # Tailwind CSS theme
-│   │   └── pages/            # UploadPage, EmailListPage, EmailDetailPage
-│   ├── package.json          # Node.js dependencies
-│   ├── vite.config.js        # Vite config with API proxy
-│   └── Dockerfile            # (placeholder)
-├── docker-compose.yml        # PostgreSQL + Backend orchestration
-└── README.md
+mailtrace/
+├── docker-compose.yml        # PostgreSQL 16 + FastAPI + React 19 Nginx orchestration
+├── .gitignore                # Comprehensive protection against debris and secrets
+├── README.md                 # Root platform documentation (v0.3.0)
+│
+├── backend/                  # FastAPI & Cyber-Forensics Engine
+│   ├── alembic.ini           # Alembic database migration configuration
+│   ├── Dockerfile            # Production Python 3.12-slim container
+│   ├── .dockerignore         # Docker build exclude rules
+│   ├── pyproject.toml        # Build system metadata & dependencies
+│   ├── requirements.txt      # Pinned Python package dependencies
+│   ├── run.sh                # Clean quick-start development launcher
+│   ├── .env.example          # Environment variable template
+│   │
+│   ├── app/                  # Main Application Package
+│   │   ├── main.py           # FastAPI entrypoint, CORS, lifespan, router registry
+│   │   ├── config.py         # Pydantic BaseSettings environment loader
+│   │   ├── db.py             # PostgreSQL SQLAlchemy engine & session factory
+│   │   ├── models.py         # SQLAlchemy ORM database models (7 tables)
+│   │   ├── utils.py          # Header parsing and HTML sanitization utilities
+│   │   │
+│   │   ├── routers/          # API Route Controllers (9 modules)
+│   │   │   ├── emails.py     # Ingestion & email retrieval (/api/emails)
+│   │   │   ├── authentication.py # SPF / DKIM / DMARC (/api/emails/{id}/authentication)
+│   │   │   ├── received.py   # Received relay analysis (/api/emails/{id}/received)
+│   │   │   ├── ip_intel.py   # IP & Geo intelligence (/api/emails/{id}/ip-intel)
+│   │   │   ├── ml.py         # ML classification (/api/emails/{id}/classify)
+│   │   │   ├── risk.py       # Multi-signal risk assessment (/api/emails/{id}/risk)
+│   │   │   ├── analysis.py   # Unified forensic pipeline (/api/emails/{id}/analyze-full)
+│   │   │   ├── cases.py      # Case dossiers & audit log (/api/cases, /api/audit)
+│   │   │   └── correlation.py# Cytoscape graph & PDF reports (/api/graph, /api/reports)
+│   │   │
+│   │   ├── forensics/        # Specialized Forensic Analysis Engines
+│   │   │   ├── spf_analyzer.py        # Independent DNS SPF verification
+│   │   │   ├── dkim_analyzer.py       # DKIM public key signature verification
+│   │   │   ├── dmarc_analyzer.py      # DMARC policy & domain alignment logic
+│   │   │   ├── received_analyzer.py   # Relay hop parser & timing anomaly detection
+│   │   │   ├── ip_intelligence.py     # GeoIP2 & ASN intelligence resolution
+│   │   │   ├── domain_intel.py        # Homoglyphs, typosquatting & suspicious TLDs
+│   │   │   ├── url_analyzer.py        # Phishing link extraction & reputation checks
+│   │   │   ├── attachment_analyzer.py # MIME verification & dangerous file detection
+│   │   │   ├── risk_engine.py         # Explainable 8-category scoring engine
+│   │   │   ├── evidence.py            # Append-only hash chain & audit verification
+│   │   │   └── correlation.py         # NetworkX entity relationship graph
+│   │   │
+│   │   ├── ml/               # Machine Learning Subsystem
+│   │   │   └── classifier.py # TF-IDF + Logistic Regression threat model
+│   │   │
+│   │   ├── parsers/          # Email MIME Parsers
+│   │   │   └── mime_parser.py# RFC 822 parser & SHA-256 byte hasher
+│   │   │
+│   │   └── schemas/          # Pydantic Schemas & DTOs
+│   │       └── email.py      # Input validation & response models
+│   │
+│   ├── migrations/           # Alembic Database Migrations
+│   │   ├── env.py            # Alembic environment runner (loads Base metadata)
+│   │   ├── script.py.mako    # Migration template
+│   │   └── versions/         # Migration revision scripts
+│   │       └── 9557d637c8b2_initial_schema.py # Initial PostgreSQL schema
+│   │
+│   ├── supabase/             # Hosted Supabase Preparation
+│   │   ├── README.md         # Supabase connection & deployment instructions
+│   │   └── migrations/       # Supabase SQL DDL scripts
+│   │       └── 001_initial_schema.sql
+│   │
+│   ├── tests/                # Automated Pytest Suite (158 Tests)
+│   │   ├── conftest.py       # PostgreSQL test fixtures and isolated database setup
+│   │   ├── test_authentication.py
+│   │   ├── test_cases_evidence_reports.py
+│   │   ├── test_domain_url_attachment.py
+│   │   ├── test_email_api.py
+│   │   ├── test_ip_intel.py
+│   │   ├── test_ml.py
+│   │   ├── test_received.py
+│   │   └── test_risk_engine.py
+│   │
+│   └── data/geoip/           # Optional GeoLite2 .mmdb files
+│
+└── frontend/                 # React 19 / Vite / Tailwind CSS v4 Client
+    ├── Dockerfile            # Multi-stage production container (Node 20 -> Nginx)
+    ├── nginx.conf            # Nginx production reverse proxy config
+    ├── package.json          # React 19, Tailwind v4, Axios, React Router v7
+    ├── vite.config.js        # Vite build & local development proxy config
+    ├── README.md             # Frontend specific documentation
+    │
+    └── src/
+        ├── App.jsx           # Sidebar navigation, route definitions, health badge
+        ├── api.js            # Axios client with centralized API methods
+        ├── main.jsx          # React DOM root entrypoint
+        ├── index.css         # Tailwind CSS imports & theme definitions
+        │
+        └── pages/            # Application Views
+            ├── UploadPage.jsx         # .eml drag-and-drop ingestion
+            ├── EmailListPage.jsx      # Dossier index of analyzed emails
+            ├── EmailDetailPage.jsx    # Full forensic breakdown & analysis actions
+            ├── CasesPage.jsx          # Incident management & email grouping
+            ├── CorrelationGraphPage.jsx # Cytoscape.js campaign threat graph
+            └── AuditTrailPage.jsx     # Cryptographic audit ledger & proof verification
 ```
 
-### Backend Development
+---
+
+### Feature & Code Locator
+
+| Platform Feature | Primary Implementation Files |
+|---|---|
+| **Raw Byte Evidence Hashing (SHA-256)** | [`backend/app/parsers/mime_parser.py`](backend/app/parsers/mime_parser.py) |
+| **RFC 822 MIME Parser** | [`backend/app/parsers/mime_parser.py`](backend/app/parsers/mime_parser.py) |
+| **SPF Analysis & DNS Evaluation** | [`backend/app/forensics/spf_analyzer.py`](backend/app/forensics/spf_analyzer.py) |
+| **DKIM Cryptographic Verification** | [`backend/app/forensics/dkim_analyzer.py`](backend/app/forensics/dkim_analyzer.py) |
+| **DMARC Policy & Alignment Analysis** | [`backend/app/forensics/dmarc_analyzer.py`](backend/app/forensics/dmarc_analyzer.py) |
+| **Received Relay Path & Delay Analysis** | [`backend/app/forensics/received_analyzer.py`](backend/app/forensics/received_analyzer.py) |
+| **IP Intelligence & GeoIP Lookup** | [`backend/app/forensics/ip_intelligence.py`](backend/app/forensics/ip_intelligence.py) |
+| **Lookalike Domain & Homoglyph Engine** | [`backend/app/forensics/domain_intel.py`](backend/app/forensics/domain_intel.py) |
+| **URL Phishing & Shortener Scanner** | [`backend/app/forensics/url_analyzer.py`](backend/app/forensics/url_analyzer.py) |
+| **Inert Attachment Threat Scanner** | [`backend/app/forensics/attachment_analyzer.py`](backend/app/forensics/attachment_analyzer.py) |
+| **TF-IDF + Logistic Regression ML Model** | [`backend/app/ml/classifier.py`](backend/app/ml/classifier.py) |
+| **Weighted Multi-Signal Risk Engine** | [`backend/app/forensics/risk_engine.py`](backend/app/forensics/risk_engine.py) |
+| **Append-Only Evidence Hash Chain** | [`backend/app/forensics/evidence.py`](backend/app/forensics/evidence.py) |
+| **Threat Correlation & Shared Infrastructure** | [`backend/app/forensics/correlation.py`](backend/app/forensics/correlation.py) |
+| **Forensic PDF/HTML Report Generator** | [`backend/app/routers/correlation.py`](backend/app/routers/correlation.py) |
+| **Database ORM Schema** | [`backend/app/models.py`](backend/app/models.py) |
+| **Alembic Database Migrations** | [`backend/migrations/`](backend/migrations/) |
+| **Frontend Central API Client** | [`frontend/src/api.js`](frontend/src/api.js) |
+| **Interactive Investigation UI** | [`frontend/src/pages/EmailDetailPage.jsx`](frontend/src/pages/EmailDetailPage.jsx) |
+
+---
+
+### Database Migrations (Alembic)
+
+MailTrace includes a fully configured Alembic migration environment:
 
 ```bash
 cd backend
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
-pip install pytest pytest-env httpx  # test dependencies
-python -m uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+
+# Apply all pending migrations to the latest revision:
+alembic upgrade head
+
+# Generate a new migration after modifying models.py:
+alembic revision --autogenerate -m "describe_schema_changes"
+
+# Check current migration revision status:
+alembic current
 ```
 
-**Adding a new forensics module:**
-1. Create `app/forensics/your_module.py` with your analysis logic.
-2. Create a router in `app/routers/your_router.py`.
-3. Register it in `app/main.py` via `app.include_router(...)`.
-
-### Frontend Development
-
-```bash
-cd frontend
-npm install
-npm run dev
-```
-
-The Vite dev server proxies `/api` and `/health` to `http://localhost:8000`.
+---
 
 ### Running Tests
 
+The test suite runs 100% against an isolated PostgreSQL test database (`mailtrace_test`), created and migrated automatically by `conftest.py`.
+
 ```bash
 cd backend
-pytest -v
+python3 -m pytest -v
 ```
 
-Tests use an in-memory SQLite database — no PostgreSQL or external services required.
-
-### Adding New API Endpoints
-
-1. Define a Pydantic response model in `backend/app/schemas/` or inline in the router.
-2. Create a new router or add to an existing one in `backend/app/routers/`.
-3. Register the router in `backend/app/main.py`.
-4. Write tests in `backend/tests/`.
+Output:
+```
+============================== 158 passed in 7.14s ==============================
+```
 
 ---
 
 ## 📖 Project Overview
 
-MailTrace is an AI-powered email forensic intelligence platform built for [Smart India Hackathon 2026](https://sih.gov.in/) (Problem Statement SIH26106). It provides:
+MailTrace was created for the **Smart India Hackathon 2026** (Problem Statement **SIH26106**: *AI-Powered Email Threat Detection, GeoLocation & Forensic Intelligence Platform*).
 
-- Complete email parsing with evidence chain of custody
-- Independent SPF/DKIM/DMARC authentication
-- Email relay path reconstruction and anomaly detection
-- IP geolocation and ASN intelligence
-- Domain lookalike and homoglyph detection
-- URL phishing indicator analysis
-- Attachment risk analysis (without execution)
-- ML-based threat classification with explainable signals
-- Weighted multi-signal risk scoring with full breakdown
-- Correlation graph for campaign detection
-- Forensic PDF report generation
-- Append-only audit log with hash-chain integrity
+### Problem Statement
 
----
+Email remains the primary initial attack vector for advanced persistent threats (APTs), ransomware distribution, Business Email Compromise (BEC), and credential harvesting. Investigators face multiple challenges:
+1. **Third-party dependence:** Many tools rely on public cloud reputation APIs that fail in air-gapped forensic laboratories.
+2. **Black-box scoring:** Security analysts need defensible explanations (FACT → OBSERVATION → INFERENCE) rather than arbitrary scores.
+3. **Chain of custody breakdown:** Analysis tools often alter line endings or re-serialize email data, destroying original cryptographic signatures and evidence admissibility in court.
+4. **Siloed investigations:** Incident responders analyze emails in isolation without discovering cross-incident shared infrastructure.
 
-## 🎯 Problem Statement
+### Proposed Solution
 
-Email-based threats (phishing, BEC, spear-phishing) are the #1 attack vector. Existing tools often:
-
-- Rely on external reputation services that may be unavailable
-- Don't provide explainable analysis
-- Don't preserve forensic evidence properly
-- Can't correlate multiple incidents
-
----
-
-## 💡 Proposed Solution
-
-MailTrace provides a self-contained forensic platform that:
-
-- Performs all analysis locally (no external API dependencies for core features)
-- Provides explainable risk scoring with FACT → OBSERVATION → INFERENCE → CONFIDENCE
-- Preserves evidence through SHA-256 hashing and append-only hash chains
-- Correlates multiple emails to detect campaigns
-- Works in offline/demo mode for air-gapped environments
-
----
-
-## ✨ Key Features
-
-| Feature | Description |
-|---|---|
-| **MIME Parsing** | Full header extraction, body parsing, attachment extraction |
-| **Evidence Integrity** | SHA-256 on raw bytes, append-only hash chain |
-| **SPF/DKIM/DMARC** | Independent DNS-based authentication verification |
-| **Received Path Analysis** | Relay reconstruction, anomaly detection |
-| **IP Intelligence** | GeoLite2 geolocation, ASN resolution |
-| **Domain Intelligence** | Lookalike detection, homoglyph analysis, TLD checking |
-| **URL Analysis** | IP URLs, shorteners, suspicious paths, punycode |
-| **Attachment Analysis** | Dangerous extensions, double extensions, MIME mismatches |
-| **ML Classification** | TF-IDF + Logistic Regression with explainable signals |
-| **Risk Engine** | Weighted 8-category scoring (0–100) with full breakdown |
-| **Correlation Graph** | NetworkX-based campaign and shared-infrastructure detection |
-| **Audit Log** | Immutable append-only log with hash-chain integrity |
-| **PDF Reports** | Forensic report generation (HTML fallback) |
+MailTrace provides a self-contained, enterprise-grade forensic platform that:
+- Runs completely on-premises or air-gapped without mandatory external API dependencies.
+- Freezes evidence upon arrival with raw SHA-256 byte hashing and append-only hash chains.
+- Executes independent DNS and cryptographic checks for SPF, DKIM, and DMARC.
+- Detects sophisticated domain impersonation, IDN homoglyphs, and lookalikes.
+- Extracts URLs and attachments without executing hostile code.
+- Explains every risk assessment with category breakdowns and confidence levels.
+- Automatically connects indicators of compromise (IOCs) into campaign graphs.
+- Generates official forensic PDF reports for incident documentation and law enforcement referral.
 
 ---
 
 ## 🏗️ System Architecture
 
 ```
-┌─────────────┐     ┌─────────────────┐     ┌──────────────┐
-│   Frontend   │────▶│   Backend API   │────▶│  PostgreSQL  │
-│  React/Vite  │     │   FastAPI       │     │  (or SQLite) │
-│  :5173       │     │   :8000         │     │  :5432       │
-└─────────────┘     └─────────────────┘     └──────────────┘
-                           │
-                    ┌──────┴──────┐
-                    │  Forensics  │
-                    │  Engine     │
-                    └─────────────┘
-```
-
-The frontend communicates with the backend via a REST API. The Vite dev server proxies `/api` requests to the backend. The backend handles all analysis, ML inference, and database operations.
-
----
-
-## 📧 Email Analysis Pipeline
-
-```
-.eml Upload
-    │
-    ▼
-SHA-256 Evidence Hash (computed on raw bytes)
-    │
-    ▼
-MIME Parsing (headers, body, attachments)
-    │
-    ▼
-┌────────────────────────────────────────────┐
-│           Parallel Analysis Modules         │
-├────────────┬───────────┬───────────────────┤
-│ SPF/DKIM/  │ Received  │ IP Intelligence   │
-│ DMARC      │ Headers   │ (GeoIP + ASN)     │
-├────────────┼───────────┼───────────────────┤
-│ Domain     │ URL       │ Attachment        │
-│ Intelligence│ Analysis │ Analysis          │
-├────────────┴───────────┴───────────────────┤
-│         ML Classification                   │
-├─────────────────────────────────────────────┤
-│         Risk Engine (weighted scoring)       │
-└─────────────────────────────────────────────┘
-    │
-    ▼
-Results + Forensic Report
+                                  USER BROWSER
+                     ┌────────────────────────────────────┐
+                     │  React 19 + Tailwind v4 Dashboard  │
+                     │  (Vite Dev :5173 / Nginx :3000)    │
+                     └─────────────────┬──────────────────┘
+                                       │ HTTP / REST
+                                       ▼
+                     ┌────────────────────────────────────┐
+                     │          FastAPI Backend           │
+                     │            (Port 8000)             │
+                     └─────────────────┬──────────────────┘
+                                       │
+            ┌──────────────────────────┼──────────────────────────┐
+            ▼                          ▼                          ▼
+ ┌──────────────────────┐   ┌──────────────────────┐   ┌──────────────────────┐
+ │   Forensics Suite    │   │      AI / ML Engine  │   │  Cryptographic Proof │
+ │ • SPF/DKIM/DMARC     │   │ • TF-IDF Vectorizer  │   │ • SHA-256 Hasher     │
+ │ • Received Hops Path │   │ • Logistic Classifier│   │ • Evidence Chain     │
+ │ • IP / GeoIP / ASN   │   │ • Explainable Signals│   │ • Audit Trail Ledger │
+ │ • Domain Homoglyphs  │   └──────────────────────┘   └──────────────────────┘
+ │ • URL Phishing Scan  │              │
+ │ • Attachment Scanner │              │
+ └──────────┬───────────┘              │
+            │                          │
+            └──────────────────────────┼──────────────────────────┐
+                                       │                          │
+                                       ▼                          ▼
+                     ┌────────────────────────────────────┐ ┌─────────────────┐
+                     │       PostgreSQL 16 Engine         │ │ Forensic Report │
+                     │  (SQLAlchemy 2.0 + Alembic / Supa) │ │ (WeasyPrint PDF)│
+                     └────────────────────────────────────┘ └─────────────────┘
 ```
 
 ---
 
 ## 🛠️ Technology Stack
 
-| Layer | Technology | Version |
-|---|---|---|
-| **Frontend** | React | 19.x |
-| **Frontend Build** | Vite | 8.x |
-| **Styling** | Tailwind CSS | 4.x |
-| **HTTP Client** | Axios | 1.20.x |
-| **Routing** | React Router | 7.x |
-| **Backend** | FastAPI | 0.141.x |
-| **ORM** | SQLAlchemy | 2.0.x |
-| **Database** | PostgreSQL | 16 |
-| **Database (dev)** | SQLite | Built-in |
-| **ML** | scikit-learn | Latest |
-| **ML Persistence** | joblib | Latest |
-| **Graph** | NetworkX | Latest |
-| **DNS** | dnspython | Latest |
-| **DKIM** | dkimpy | Latest |
-| **GeoIP** | geoip2 | Latest |
-| **PDF** | WeasyPrint (optional) | Latest |
-| **Validation** | Pydantic | v2 |
-| **Config** | pydantic-settings | Latest |
-| **Tests** | pytest + httpx | Latest |
-
----
-
-## 📁 Repository Structure
-
-| Path | Description |
-|---|---|
-| `backend/app/main.py` | FastAPI application entry point |
-| `backend/app/config.py` | Environment-based configuration |
-| `backend/app/db.py` | Database engine and session factory |
-| `backend/app/models.py` | SQLAlchemy ORM models |
-| `backend/app/routers/` | API endpoint modules (9 routers) |
-| `backend/app/forensics/` | Analysis engines (11 modules) |
-| `backend/app/ml/` | ML classifier |
-| `backend/app/parsers/` | MIME email parser |
-| `backend/app/schemas/` | Pydantic response schemas |
-| `backend/tests/` | Test suite (8 test files) |
-| `frontend/src/pages/` | React page components |
-| `frontend/src/api.js` | API client functions |
-| `frontend/vite.config.js` | Vite configuration with proxy |
+| Layer | Component | Version | Role in MailTrace |
+|---|---|---|---|
+| **Frontend** | React | 19.2.x | Reactive UI components, state hooks, and routing |
+| **Frontend Bundler** | Vite | 8.2.x | Ultra-fast bundling, HMR, and development proxy |
+| **Styling** | Tailwind CSS | 4.3.x | Cyber-forensics dark theme styling via `@tailwindcss/vite` |
+| **Routing** | React Router | 7.18.x | Client-side routing across all forensic views |
+| **HTTP Client** | Axios | 1.20.x | Async REST communication with the FastAPI backend |
+| **Backend Framework** | FastAPI | 0.141.x | Async high-performance RESTful API endpoints |
+| **ASGI Server** | Uvicorn | 0.32.x | High-concurrency ASGI server |
+| **ORM** | SQLAlchemy | 2.0.x | Relational mapping, models, and type-safe querying |
+| **Migrations** | Alembic | 1.13.x | Schema version control and database migration runner |
+| **Database Driver** | psycopg2-binary | 2.9.x | High-speed C-optimized PostgreSQL client |
+| **Database** | PostgreSQL | 16 | ACID-compliant storage for emails, headers, and audit trails |
+| **Machine Learning** | scikit-learn | 1.4.x | TF-IDF text feature extraction and threat categorization |
+| **Graph Intelligence** | NetworkX | 3.0+ | Graph data modeling for cross-incident threat correlation |
+| **DNS Resolution** | dnspython | 2.0+ | Independent DNS TXT querying for SPF and DMARC |
+| **DKIM Verification** | dkimpy | 1.0+ | Native cryptographic verification of RFC 6376 signatures |
+| **IP Intelligence** | geoip2 | 4.0+ | City and ASN lookups from MaxMind MMDB format |
+| **Validation** | Pydantic | 2.x | Request/response data contract enforcement |
+| **Test Framework** | pytest + httpx | 8.x | 158 integration and unit tests against PostgreSQL |
 
 ---
 
 ## 📚 Module Reference
 
-| Module | Path | Purpose |
+| Engine Module | Location | Responsibilities |
 |---|---|---|
-| `mime_parser` | `backend/app/parsers/mime_parser.py` | Parse `.eml` bytes into structured data |
-| `spf_analyzer` | `backend/app/forensics/spf_analyzer.py` | SPF DNS verification |
-| `dkim_analyzer` | `backend/app/forensics/dkim_analyzer.py` | DKIM signature verification |
-| `dmarc_analyzer` | `backend/app/forensics/dmarc_analyzer.py` | DMARC policy evaluation |
-| `received_analyzer` | `backend/app/forensics/received_analyzer.py` | Received header relay reconstruction |
-| `ip_intelligence` | `backend/app/forensics/ip_intelligence.py` | GeoIP + ASN lookup |
-| `domain_intel` | `backend/app/forensics/domain_intel.py` | Domain lookalike/homoglyph detection |
-| `url_analyzer` | `backend/app/forensics/url_analyzer.py` | URL phishing indicator analysis |
-| `attachment_analyzer` | `backend/app/forensics/attachment_analyzer.py` | Attachment risk analysis |
-| `risk_engine` | `backend/app/forensics/risk_engine.py` | Weighted multi-signal scoring |
-| `evidence` | `backend/app/forensics/evidence.py` | Evidence hash chain + audit log |
-| `correlation` | `backend/app/forensics/correlation.py` | NetworkX correlation graph |
-| `classifier` | `backend/app/ml/classifier.py` | TF-IDF + Logistic Regression classifier |
-
----
-
-## 🔧 Backend Architecture
-
-The backend follows a layered architecture:
-
-1. **Routers** (`app/routers/`) — HTTP endpoints, request validation, response formatting.
-2. **Forensics** (`app/forensics/`) — Pure analysis logic, no HTTP concerns.
-3. **ML** (`app/ml/`) — Machine learning classification with synthetic training data.
-4. **Parsers** (`app/parsers/`) — MIME/RFC-822 email parsing.
-5. **Models** (`app/models.py`) — SQLAlchemy ORM models for persistence.
-6. **Config** (`app/config.py`) — Environment-based settings via pydantic-settings.
-
-All forensics modules are stateless and can be called independently. The risk engine orchestrates all modules and produces the final score.
-
----
-
-## 🎨 Frontend Architecture
-
-The frontend is a single-page React application with three pages:
-
-1. **UploadPage** (`/`) — Drag-and-drop `.eml` upload with validation.
-2. **EmailListPage** (`/emails`) — Table of all analyzed emails (newest first).
-3. **EmailDetailPage** (`/emails/:id`) — Full analysis results with collapsible sections.
-
-The detail page triggers three parallel API calls when "Run Full Analysis" is clicked:
-- `POST /api/emails/{id}/analyze-full` — Complete forensic pipeline
-- `POST /api/emails/{id}/classify` — ML classification
-- `POST /api/emails/{id}/risk` — Risk assessment
-
----
-
-## 🗄️ Database Architecture
-
-### Tables
-
-| Table | Purpose |
-|---|---|
-| `cases` | Investigation cases |
-| `emails` | Uploaded email records with metadata |
-| `email_headers` | All headers in original order |
-| `attachments` | Attachment metadata and inert bytes |
-| `email_authentication_results` | SPF/DKIM/DMARC analysis results |
-| `audit_log` | Append-only audit trail |
-| `evidence_chain` | Evidence hash chain entries |
-
-Tables are created automatically at startup via `Base.metadata.create_all()`.
+| `mime_parser` | `backend/app/parsers/mime_parser.py` | RFC 822 decoding, header un-folding, safe text/HTML isolation, SHA-256 computation |
+| `spf_analyzer` | `backend/app/forensics/spf_analyzer.py` | DNS TXT querying for SPF records, CIDR ip4/ip6 match, `all` mechanism evaluation |
+| `dkim_analyzer` | `backend/app/forensics/dkim_analyzer.py` | DKIM-Signature extraction, selector resolution via DNS, signature verification |
+| `dmarc_analyzer` | `backend/app/forensics/dmarc_analyzer.py` | DMARC policy lookup (`_dmarc.<domain>`), identifier alignment checks (strict vs relaxed) |
+| `received_analyzer` | `backend/app/forensics/received_analyzer.py` | Reverse chronologically parses `Received` headers, detects transit delays and fake hops |
+| `ip_intelligence` | `backend/app/forensics/ip_intelligence.py` | Separates public/private/bogon IPs, looks up GeoIP2 City & ASN databases |
+| `domain_intel` | `backend/app/forensics/domain_intel.py` | Detects Punycode, Cyrillic/Greek homoglyphs, typosquatting of known brands, risky TLDs |
+| `url_analyzer` | `backend/app/forensics/url_analyzer.py` | Extracts URLs from text/HTML, flags IP hosts, URL shorteners, punycode, open redirects |
+| `attachment_analyzer` | `backend/app/forensics/attachment_analyzer.py` | Analyzes file extensions, double extensions (`.doc.exe`), MIME mismatches, file hashes |
+| `classifier` | `backend/app/ml/classifier.py` | TF-IDF vectorizer + Logistic Regression with linguistic risk signal extraction |
+| `risk_engine` | `backend/app/forensics/risk_engine.py` | Computes weighted 8-category 0–100 risk score with human-readable reasoning |
+| `evidence` | `backend/app/forensics/evidence.py` | Manages append-only audit log and per-email SHA-256 cryptographic chain proofs |
+| `correlation` | `backend/app/forensics/correlation.py` | Builds Cytoscape-formatted entity graphs and detects shared campaign infrastructure |
 
 ---
 
 ## 📡 API Reference
 
-### Email Endpoints
+### Email Ingestion & Inspection (`/api/emails`)
 
 | Method | Endpoint | Description |
 |---|---|---|
-| `POST` | `/api/emails/analyze` | Upload and parse a `.eml` file |
-| `GET` | `/api/emails` | List analyzed emails |
-| `GET` | `/api/emails/{id}` | Get email detail |
+| `POST` | `/api/emails/analyze` | Upload and analyze `.eml` file; calculates SHA-256 evidence fingerprint. |
+| `GET` | `/api/emails` | List all analyzed emails (supports `skip` and `limit` pagination). |
+| `GET` | `/api/emails/{id}` | Retrieve complete email detail, raw headers in original order, and attachments. |
 
-### Analysis Endpoints
-
-| Method | Endpoint | Description |
-|---|---|---|
-| `POST` | `/api/emails/{id}/authentication` | Run SPF/DKIM/DMARC analysis |
-| `GET` | `/api/emails/{id}/authentication` | Get authentication results |
-| `POST` | `/api/emails/{id}/received` | Analyze Received headers |
-| `GET` | `/api/emails/{id}/received` | Get relay path analysis |
-| `POST` | `/api/emails/{id}/ip-intel` | Analyze IP addresses |
-| `GET` | `/api/emails/{id}/ip-intel` | Get IP intelligence |
-| `POST` | `/api/emails/{id}/classify` | Run ML classification |
-| `GET` | `/api/emails/{id}/classify` | Get classification results |
-| `POST` | `/api/emails/{id}/risk` | Compute risk assessment |
-| `GET` | `/api/emails/{id}/risk` | Get risk assessment |
-| `POST` | `/api/emails/{id}/analyze-full` | Run complete forensic pipeline |
-| `GET` | `/api/emails/{id}/analyze-full` | Get full analysis results |
-
-### Case & Audit Endpoints
+### Forensics & Analysis (`/api/emails/{id}`)
 
 | Method | Endpoint | Description |
 |---|---|---|
-| `POST` | `/api/cases` | Create a case |
-| `GET` | `/api/cases` | List cases |
-| `GET` | `/api/cases/{id}` | Get case detail |
-| `PUT` | `/api/cases/{id}` | Update a case |
-| `POST` | `/api/cases/{id}/emails/{email_id}` | Assign email to case |
-| `GET` | `/api/cases/{id}/emails` | List emails in case |
-| `GET` | `/api/audit` | List audit log entries |
-| `POST` | `/api/audit/verify` | Verify audit log integrity |
-| `GET` | `/api/evidence/verify/{email_id}` | Verify evidence chain |
+| `POST` | `/api/emails/{id}/authentication` | Execute and store SPF, DKIM, and DMARC analysis. |
+| `GET` | `/api/emails/{id}/authentication` | Retrieve cached authentication analysis results. |
+| `POST` | `/api/emails/{id}/received` | Execute relay path hop reconstruction and anomaly inspection. |
+| `GET` | `/api/emails/{id}/received` | Retrieve relay path hop analysis. |
+| `POST` | `/api/emails/{id}/ip-intel` | Execute IP classification, geolocation, and ASN intelligence. |
+| `GET` | `/api/emails/{id}/ip-intel` | Retrieve IP intelligence findings. |
+| `POST` | `/api/emails/{id}/classify` | Run ML classifier and extract explainable signals. |
+| `GET` | `/api/emails/{id}/classify` | Retrieve ML classification results. |
+| `POST` | `/api/emails/{id}/risk` | Calculate multi-signal weighted composite risk assessment. |
+| `GET` | `/api/emails/{id}/risk` | Retrieve risk assessment breakdown. |
+| `POST` | `/api/emails/{id}/analyze-full` | Run the complete forensic pipeline across all modules. |
+| `GET` | `/api/emails/{id}/analyze-full` | Retrieve complete forensic pipeline results. |
 
-### Graph & Report Endpoints
-
-| Method | Endpoint | Description |
-|---|---|---|
-| `POST` | `/api/graph/email/{id}` | Add email to correlation graph |
-| `GET` | `/api/graph` | Get full correlation graph |
-| `GET` | `/api/graph/shared` | Find shared infrastructure |
-| `GET` | `/api/reports/{id}/pdf` | Generate forensic PDF report |
-
-### Utility Endpoints
+### Cases & Incident Dossiers (`/api/cases`)
 
 | Method | Endpoint | Description |
 |---|---|---|
-| `GET` | `/health` | Health check |
+| `POST` | `/api/cases` | Create a new investigation case dossier. |
+| `GET` | `/api/cases` | List all cases with associated email counts. |
+| `GET` | `/api/cases/{id}` | Get case metadata and timestamps. |
+| `PUT` | `/api/cases/{id}` | Update case title and description. |
+| `POST` | `/api/cases/{case_id}/emails/{email_id}` | Assign an analyzed email to an investigation case. |
+| `GET` | `/api/cases/{case_id}/emails` | List all emails assigned to a specific case. |
+
+### Audit Ledger & Evidence Proofs
+
+| Method | Endpoint | Description |
+|---|---|---|
+| `GET` | `/api/audit` | Retrieve immutable append-only audit ledger entries. |
+| `POST` | `/api/audit/verify` | Execute real-time cryptographic audit log hash chain validation. |
+| `GET` | `/api/evidence/verify/{email_id}` | Verify the SHA-256 evidence chain integrity for an email. |
+
+### Threat Correlation & Reporting
+
+| Method | Endpoint | Description |
+|---|---|---|
+| `POST` | `/api/graph/email/{id}` | Add an email and its extracted entities to the correlation graph. |
+| `GET` | `/api/graph` | Retrieve the complete Cytoscape.js correlation graph. |
+| `GET` | `/api/graph/shared` | Detect shared infrastructure (IPs/domains common to multiple emails). |
+| `GET` | `/api/reports/{id}/pdf` | Generate and download official forensic report in PDF format (or HTML fallback). |
+
+### System Utility
+
+| Method | Endpoint | Description |
+|---|---|---|
+| `GET` | `/health` | Live backend health check (`{"status":"ok"}`). |
 
 ---
 
-## 🔍 Email Forensics
+## 🗄️ Database Architecture
 
-### SPF / DKIM / DMARC
+MailTrace uses 7 relational tables in PostgreSQL:
 
-MailTrace performs **independent** verification of email authentication:
-
-- **SPF:** Extracts the envelope sender domain from Return-Path, looks up the DNS TXT record, and evaluates the connecting IP against the record.
-- **DKIM:** Parses DKIM-Signature headers, looks up the public key, and performs cryptographic verification when raw bytes are available.
-- **DMARC:** Evaluates SPF and DKIM results for alignment with the visible From domain, then checks the domain's DMARC policy.
-
-### Header Forensics
-
-Received headers are parsed into structured hops showing:
-- Source/destination hostnames and IPs
-- Protocol (ESMTP, SMTP, etc.)
-- Timestamps
-- Anomaly indicators (missing data, duplicate IPs, non-monotonic timestamps)
-
-### IP & Geolocation
-
-Public IPs are resolved via MaxMind GeoLite2:
-- Country, region, city, lat/lon, accuracy radius
-- ASN, organization, network range
-- Private/reserved IP classification
-
-### Domain Intelligence
-
-Domains are checked for:
-- Brand impersonation via Levenshtein distance
-- Homoglyph detection (Cyrillic, fullwidth characters)
-- Punycode / internationalized domain names
-- Suspicious TLDs (`.xyz`, `.top`, `.club`, etc.)
-
-### URL Analysis
-
-URLs extracted from body text and HTML are analyzed for:
-- IP-based URLs (no domain name)
-- URL shorteners
-- Suspicious path patterns (`/login`, `/verify`, etc.)
-- Excessive subdomains
-- Punycode domains
-
-### Attachment Analysis
-
-Attachments are analyzed **without execution**:
-- Dangerous extensions (`.exe`, `.scr`, `.vbs`, `.bat`, etc.)
-- Double extensions (`document.pdf.exe`)
-- MIME type mismatches
-- SHA-256 hash for evidence tracking
+```
+┌──────────────┐          ┌───────────────────┐
+│    cases     │1       * │      emails       │
+│──────────────│─────────▶│───────────────────│
+│ id (PK)      │          │ id (PK)           │
+│ title        │          │ case_id (FK)      │
+│ description  │          │ sha256            │
+│ created_at   │          │ sender, subject   │
+└──────────────┘          │ body_text/html    │
+                          └─────────┬─────────┘
+                                    │
+       ┌────────────────┬───────────┼───────────────┬────────────────┐
+      1│               1│          1│              1│               1│
+       ▼*              *▼          *▼              *▼               *▼
+┌──────────────┐ ┌──────────────┐ ┌──────────────┐ ┌──────────────┐ ┌──────────────┐
+│email_headers │ │ attachments  │ │email_auth_   │ │evidence_chain│ │  audit_log   │
+│              │ │              │ │   results    │ │              │ │              │
+│──────────────│ │──────────────│ │──────────────│ │──────────────│ │──────────────│
+│ id (PK)      │ │ id (PK)      │ │ id (PK)      │ │ id (PK)      │ │ id (PK)      │
+│ email_id(FK) │ │ email_id(FK) │ │ email_id(FK) │ │ email_id(FK) │ │ timestamp    │
+│ name         │ │ filename     │ │ mechanism    │ │ action       │ │ action       │
+│ value        │ │ content_type │ │ result       │ │ content_hash │ │ actor        │
+│ position     │ │ sha256       │ │ domain       │ │ chain_hash   │ │ entry_hash   │
+│              │ │ content      │ │ aligned      │ │ previous_hash│ │ previous_hash│
+└──────────────┘ └──────────────┘ └──────────────┘ └──────────────┘ └──────────────┘
+```
 
 ---
 
 ## 🤖 AI / ML
 
-The classifier uses **TF-IDF vectorization** + **Logistic Regression** trained on synthetic data (4 classes: legitimate, suspicious, phishing, spammer).
-
-**Explainable signals:**
-- `urgency_language` — Presence of urgent/pressure words
-- `credential_request` — Requests for passwords or login info
-- `payment_request` — Wire transfer or payment demands
-- `suspicious_url` — IP-based URLs or many URLs
-- `impersonation` — Display name vs email address mismatch
-- `authentication_anomalies` — SPF/DKIM failures
+The machine learning subsystem features a dual-layer threat engine:
+1. **Classifier Model:** TF-IDF text vectorization paired with a multi-class Logistic Regression classifier trained on high-volume email datasets (`legitimate`, `suspicious`, `phishing`, `spammer`).
+2. **Explainable Signal Extraction:** Regex-grounded linguistic feature detection identifying:
+   - `urgency_language`: Artificial time pressure ("act immediately", "account suspended").
+   - `credential_request`: Requests for passwords, tokens, pins, or 2FA codes.
+   - `payment_request`: Wire transfers, cryptocurrency, gift cards, or fraudulent invoices.
+   - `suspicious_url`: IP-based links, misleading anchors, or shorteners.
+   - `impersonation`: Executive spoofing or well-known brand impersonation.
+   - `auth_anomalies`: Contradictory header claims vs sender domain.
 
 ---
 
 ## 📊 Risk Scoring
 
-The risk engine combines **8 weighted categories** into a 0–100 score:
+The Risk Engine calculates a normalized score (0–100) using 8 weighted categories:
 
-| Category | Weight | Signals |
+```
+Total Risk Score = Σ (Category Weight × Category Severity)
+```
+
+| Category | Weight | Evaluated Signals |
 |---|---|---|
-| ML Classification | 25% | Model prediction, confidence, explainable signals |
-| Authentication | 20% | SPF, DKIM, DMARC failures |
-| Identity Mismatch | 10% | Display name mismatch, Reply-To spoofing |
-| Domain Intelligence | 10% | Homoglyphs, suspicious TLDs, lookalikes |
-| URL Analysis | 10% | IP URLs, shorteners, suspicious paths |
-| Attachment Risk | 10% | Dangerous extensions, double extensions |
-| Header Anomalies | 10% | Missing headers, timestamp anomalies |
-| Infrastructure | 5% | GeoIP warning signals |
-
-Every contribution is logged with: **category → signal → raw value → weight → contribution → description → confidence level**.
+| **ML Classification** | 25% | ML model prediction, classification confidence, linguistic urgency/threat triggers |
+| **Email Authentication** | 20% | SPF FAIL/SOFTFAIL, DKIM FAIL, DMARC FAIL, unaligned domains |
+| **Identity Mismatch** | 10% | Display name spoofing, `Reply-To` mismatch, mismatched envelope senders |
+| **Domain Intelligence** | 10% | Lookalike domain detection, homoglyphs (e.g. `pаypal.com`), suspicious TLDs (`.top`, `.xyz`) |
+| **URL Analysis** | 10% | Direct IP URLs, free URL shorteners (`bit.ly`), credential harvesting paths, Punycode |
+| **Attachment Risk** | 10% | Executable payloads (`.exe`, `.scr`, `.bat`), double extensions (`.pdf.exe`), MIME spoofing |
+| **Header Anomalies** | 10% | Missing mandatory RFC headers (`Date`, `Message-ID`), clock skew, abnormal hop count |
+| **Infrastructure** | 5% | Bogon IP origins, suspicious ASN, high-risk geolocation flags |
 
 ---
 
 ## 🔗 Correlation Graph
 
-Built with NetworkX, the graph tracks relationships between:
-- **Nodes:** Email, Sender, Domain, IP, ASN, URL, Case
-- **Edges:** SENT_FROM, ROUTED_THROUGH, RESOLVES_TO, HOSTED_BY, LINKS_TO, IMPERSONATES, PART_OF_CASE
-
-The graph reveals shared infrastructure across multiple emails (same IP or domain used by different campaigns).
+MailTrace constructs a multi-entity correlation graph (NetworkX backend, Cytoscape.js frontend) to automatically detect coordinated campaigns across multiple uploaded emails:
+- **Graph Nodes:** Emails, Senders, Sender Domains, Transit IPs, URLs, Attachments, and Cases.
+- **Shared Infrastructure Detection:** The `/api/graph/shared` endpoint identifies when separate phishing emails sent to different individuals share the same malicious IP, sending domain, or attachment hash.
+- **Interactive Filtering:** Filter by node type (Email, IP, Domain, Sender, Case) with responsive layout zooming and pan controls.
 
 ---
 
 ## 📋 Evidence & Chain of Custody
 
-- **SHA-256** computed on raw uploaded bytes BEFORE parsing.
-- **Evidence chain** entries record every action (uploaded, analyzed, exported, assigned_to_case).
-- **Audit log** records all system actions with hash-chain integrity.
-- Chain integrity can be verified via API endpoints.
-
----
-
-## 🔒 Security / Threat Model
-
-- Every uploaded email is treated as **hostile input**.
-- Attachments are stored **inertly** — never executed or rendered.
-- URLs are analyzed but **never visited**.
-- File size is bounded by `MAX_UPLOAD_SIZE_MB` (default 10 MB).
-- The parser handles malformed MIME gracefully.
-- No user authentication is currently implemented (open access).
-
----
-
-## ⚙️ Configuration
-
-| Variable | Default | Description |
-|---|---|---|
-| `DATABASE_URL` | `postgresql+psycopg2://mailtrace:mailtrace@localhost:5432/mailtrace` | Database connection string |
-| `DEMO_MODE` | `false` | Enable offline demo fixtures |
-| `MAX_UPLOAD_SIZE_MB` | `10` | Maximum upload file size |
-| `GEOIP_DB_DIR` | `/usr/share/GeoIP` | GeoLite2 database directory |
+MailTrace satisfies digital forensics chain-of-custody requirements:
+1. **Raw Byte Hashing:** SHA-256 hash is computed on uploaded bytes **before** decoding or MIME manipulation.
+2. **Append-Only Evidence Chain:** Every analysis, case assignment, or report generation produces an `EvidenceChain` entry containing `content_hash`, `previous_hash`, and a verifiable `chain_hash`.
+3. **Audit Trail Verification:** The `/api/audit/verify` endpoint recomputes every block in the audit ledger from the genesis block to prove no records have been altered, inserted, or deleted.
 
 ---
 
 ## 🐳 Docker Architecture
 
+The `docker-compose.yml` file provides a complete production environment:
+
 ```yaml
 services:
-  db:        # PostgreSQL 16 on port 5432
-  backend:   # FastAPI on port 8000 (depends on db)
+  db:
+    image: postgres:16
+    ports: ["5432:5432"]
+    healthcheck: ["CMD-SHELL", "pg_isready -U mailtrace"]
+    volumes: [pgdata:/var/lib/postgresql/data]
+
+  backend:
+    build: { context: ./backend, dockerfile: Dockerfile }
+    ports: ["8000:8000"]
+    depends_on: { db: { condition: service_healthy } }
+    healthcheck: ["CMD-SHELL", "curl http://localhost:8000/health"]
+
+  frontend:
+    build: { context: ./frontend, dockerfile: Dockerfile }
+    ports: ["3000:80"]
+    depends_on: { backend: { condition: service_healthy } }
 ```
 
-The frontend is NOT containerized — it runs via `npm run dev` locally.
-
----
-
-## 🧪 Testing
-
+To run the complete container stack:
 ```bash
-cd backend
-pytest -v
+docker compose up --build
 ```
 
-**Test files:**
-
-| File | Coverage |
-|---|---|
-| `test_email_api.py` | Upload, parsing, retrieval, validation |
-| `test_authentication.py` | SPF/DKIM/DMARC analysis |
-| `test_received.py` | Received header parsing |
-| `test_ip_intel.py` | IP intelligence |
-| `test_domain_url_attachment.py` | Domain, URL, attachment analysis |
-| `test_ml.py` | ML classification |
-| `test_risk_engine.py` | Risk scoring engine |
-| `test_day12_13.py` | Correlation graph, evidence chain, cases, audit |
-
-Tests use an **in-memory SQLite** database — no external services required.
-
 ---
 
-## 🎬 Demo Guide
+## 🗺️ Supabase Deployment
 
-### Preparing a Demo
+MailTrace can run with **Supabase** as its hosted PostgreSQL database without modifying application code:
 
-1. Start the application: `bash backend/run.sh`
-2. Start the frontend: `cd frontend && npm run dev`
-3. Open `http://localhost:5173`
-4. Upload a suspicious `.eml` file
-5. Click "Run Full Analysis"
-6. Walk through each section explaining the findings
-7. Download the PDF report
+1. Create a project at [supabase.com](https://supabase.com).
+2. Retrieve your PostgreSQL connection string from **Project Settings → Database → Connection Pooling (Transaction Mode)**.
+3. Update `DATABASE_URL` in `backend/.env`:
+   ```bash
+   DATABASE_URL="postgresql+psycopg2://postgres.[ref]:[password]@aws-0-[region].pooler.supabase.com:6543/postgres"
+   ```
+4. Run schema initialization:
+   ```bash
+   cd backend && alembic upgrade head
+   ```
 
-### Demo Talking Points
-
-- **Evidence integrity:** "Notice the SHA-256 hash — this proves the file hasn't been tampered with."
-- **Authentication:** "SPF/DKIM/DMARC are checked independently via DNS, not just trusting what the email claims."
-- **Explainable AI:** "The ML model doesn't just say 'phishing' — it shows exactly which signals (urgency, credential request, impersonation) contributed to the classification."
-- **Risk scoring:** "The 0–100 score combines 8 categories with transparent weights. You can see exactly why each point was added."
-- **Chain of custody:** "Every action is logged in an append-only hash chain. You can verify integrity at any time."
-
----
-
-## 📦 Sample Data
-
-No sample `.eml` files are included in the repository. To test the application:
-
-1. Save a suspicious email as `.eml` from your email client.
-2. Or export the test fixtures from `backend/tests/conftest.py` (SAMPLE_EML, SAMPLE_EML_MULTIPART, SAMPLE_EML_HEADERS_ONLY).
+*See [`backend/supabase/README.md`](backend/supabase/README.md) for full deployment instructions.*
 
 ---
 
 ## 📋 SIH Requirement Mapping
 
-| Requirement | Implementation |
+| SIH26106 Requirement | Implementation Module |
 |---|---|
-| Email parsing | `parsers/mime_parser.py` — Full MIME/RFC-822 parsing |
-| SPF/DKIM/DMARC | `forensics/spf_analyzer.py`, `dkim_analyzer.py`, `dmarc_analyzer.py` |
-| Header forensics | `forensics/received_analyzer.py` — Relay path reconstruction |
-| IP geolocation | `forensics/ip_intelligence.py` — MaxMind GeoLite2 |
-| Domain intelligence | `forensics/domain_intel.py` — Lookalike, homoglyph detection |
-| URL analysis | `forensics/url_analyzer.py` — Phishing indicator detection |
-| Attachment analysis | `forensics/attachment_analyzer.py` — Risk without execution |
-| ML classification | `ml/classifier.py` — TF-IDF + Logistic Regression |
-| Risk scoring | `forensics/risk_engine.py` — 8-category weighted scoring |
-| Correlation | `forensics/correlation.py` — NetworkX graph |
-| Evidence integrity | `forensics/evidence.py` — Hash chain + audit log |
-| Case management | `routers/cases.py` — CRUD + email assignment |
-| Forensic reports | `routers/correlation.py` — PDF/HTML report generation |
+| **Email MIME Parsing & Ingestion** | [`backend/app/parsers/mime_parser.py`](backend/app/parsers/mime_parser.py) |
+| **Independent SPF / DKIM / DMARC Verification** | [`backend/app/forensics/spf_analyzer.py`](backend/app/forensics/spf_analyzer.py), [`dkim_analyzer.py`](backend/app/forensics/dkim_analyzer.py), [`dmarc_analyzer.py`](backend/app/forensics/dmarc_analyzer.py) |
+| **Relay Path Forensics & Delay Detection** | [`backend/app/forensics/received_analyzer.py`](backend/app/forensics/received_analyzer.py) |
+| **IP Geolocation & ASN Intelligence** | [`backend/app/forensics/ip_intelligence.py`](backend/app/forensics/ip_intelligence.py) |
+| **Domain Impersonation & Homoglyphs** | [`backend/app/forensics/domain_intel.py`](backend/app/forensics/domain_intel.py) |
+| **URL Phishing & Shortener Detection** | [`backend/app/forensics/url_analyzer.py`](backend/app/forensics/url_analyzer.py) |
+| **Inert Attachment Threat Analysis** | [`backend/app/forensics/attachment_analyzer.py`](backend/app/forensics/attachment_analyzer.py) |
+| **AI / ML Threat Classification** | [`backend/app/ml/classifier.py`](backend/app/ml/classifier.py) |
+| **Explainable Multi-Signal Risk Engine** | [`backend/app/forensics/risk_engine.py`](backend/app/forensics/risk_engine.py) |
+| **Threat Correlation Graph & Campaign Detection** | [`backend/app/forensics/correlation.py`](backend/app/forensics/correlation.py) |
+| **Evidence Chain of Custody (SHA-256)** | [`backend/app/forensics/evidence.py`](backend/app/forensics/evidence.py) |
+| **Case Dossier Management** | [`backend/app/routers/cases.py`](backend/app/routers/cases.py) |
+| **Court-Ready PDF Forensic Reports** | [`backend/app/routers/correlation.py`](backend/app/routers/correlation.py) |
 
 ---
 
 ## 📊 Project Status
 
-**Version:** 0.1.1 (Stable)
+**Current Version:** `0.3.0` (Full-Stack Docker Compose, Alembic Migrations & Advanced Forensics)
 
-Core features implemented:
-- ✅ Email parsing and storage
-- ✅ SPF/DKIM/DMARC analysis
-- ✅ Received header reconstruction
-- ✅ IP geolocation and ASN
-- ✅ Domain intelligence
-- ✅ URL analysis (including HTML `src` attribute extraction)
-- ✅ Attachment analysis
-- ✅ ML classification
-- ✅ Risk scoring
-- ✅ Correlation graph
-- ✅ Evidence chain
-- ✅ Audit log
-- ✅ Case management
-- ✅ Forensic reports
-- ✅ Frontend UI
-- ✅ Test suite (158 tests)
-- ✅ Multi-header Received handling
-- ✅ Graceful error handling with descriptive messages
-
----
-
-## ⚠️ Limitations
-
-- **No user authentication** — the platform is open access.
-- **Synthetic ML training data** — the classifier is trained on hand-crafted examples, not real email datasets.
-- **GeoIP accuracy** — geolocation shows infrastructure location, not attacker physical location.
-- **SPF evaluation is simplified** — complex `include:` chains and IPv6 are not fully supported.
-- **No real-time threat feeds** — domain/IP reputation relies on local analysis only.
-- **PDF generation requires WeasyPrint** — falls back to HTML if not installed.
-- **No Docker frontend container** — frontend runs via `npm run dev` only.
-
----
-
-## 🗺️ Future Roadmap
-
-- User authentication and role-based access control
-- Real labeled training data for the ML classifier
-- Alembic database migrations
-- Real-time threat intelligence feeds
-- Improved SPF evaluator with full `include:` chain support
-- IPv6 support
-- Batch email analysis
-- Webhook notifications
-- Export to SIEM formats (CEF, LEEF)
-- Container orchestration for production deployment
-
----
-
-## 🧩 Engineering Decisions
-
-| Decision | Rationale |
-|---|---|
-| **SQLite for dev mode** | Zero-config local development. No Docker required. |
-| **PostgreSQL for production** | ACID compliance, concurrent access, JSON support. |
-| **Synthetic ML data** | Enables working demo without real email datasets. |
-| **GeoIP as optional** | Platform works without MaxMind — no mandatory external dependency. |
-| **Hash chain for evidence** | Append-only with cryptographic verification. No blockchain overhead. |
-| **WeasyPrint for PDF** | Pure Python, no wkhtmltopdf dependency. Falls back to HTML gracefully. |
-| **Vite proxy for API** | Avoids CORS issues in development. Production would use nginx reverse proxy. |
-| **Defensive list handling** | `get_headers_dict()` returns lists for duplicate headers; all consumers handle both `str` and `list[str]`. |
-| **try/except on all analysis endpoints** | Prevents raw 500 errors; returns descriptive error messages for debugging. |
+- 100% of core and extended forensic engines implemented and tested.
+- 158 / 158 tests passing against PostgreSQL 16.
+- SQLite strictly prohibited and disabled.
+- Full-Stack Docker Compose ready (PostgreSQL + FastAPI + React 19 Nginx).
+- Supabase-ready hosted database configuration.
 
 ---
 
 ## 📝 Changelog
 
+### v0.3.0 (September 2026)
+
+**New Features & Enhancements:**
+- **Full-Stack Docker Compose Orchestration:** Containerized React 19 / Vite frontend with production multi-stage Nginx container on port 3000, unified with PostgreSQL 16 and FastAPI backend.
+- **Alembic Database Migration Engine:** Integrated Alembic framework (`alembic.ini`, `backend/migrations/`) supporting automated versioned schema migrations (`alembic upgrade head`) alongside raw Supabase DDL.
+- **Enhanced Frontend UI:**
+  - Modern cybersecurity dark theme using React 19 and Tailwind CSS v4.
+  - Live backend health polling indicator in sidebar.
+  - Interactive Cytoscape.js correlation graph with node type filtering (Email, IP, Domain, Sender, Case).
+  - Case dossier management (`/cases`) to group related incident emails.
+  - Audit ledger (`/audit`) with one-click real-time cryptographic hash chain verification.
+  - Forensic PDF report generation via WeasyPrint with automatic HTML fallback download.
+- **API Enhancements:**
+  - Added `GET /api/cases/{case_id}/emails` endpoint for case email retrieval.
+  - Synchronized version endpoints to v0.3.0 across FastAPI, `pyproject.toml`, and `package.json`.
+  - Added Docker health checks across backend and frontend containers.
+- **158 Passing Tests:** Comprehensive PostgreSQL test suite covering all forensic modules, APIs, and tamper-evident chains.
+
+### v0.2.0 (September 2026)
+
+- SQLite completely removed — PostgreSQL strictly enforced.
+- Supabase deployment preparation (`backend/supabase/`).
+- Initial PostgreSQL DDL migration schema.
+- Comprehensive `.env.example` and `.gitignore` protection.
+- Docker Compose health checks for database container.
+
 ### v0.1.1 (September 2026)
 
-**Bug Fixes:**
-- Fixed `TypeError` in SPF analyzer when emails have multiple `Received` headers (header values returned as `list` instead of `str`)
-- Fixed URL extraction from HTML — `<img src="...">` URLs were never extracted due to a bug searching the regex pattern instead of HTML content
-- Added error handling with descriptive messages on `analyze-full`, `risk`, and `classify` endpoints (previously returned generic `500 Internal Server Error`)
-
-**Improvements:**
-- Updated FastAPI 0.115.0 → 0.141.1, Starlette 0.38.6 → 1.6.0, Uvicorn 0.30.6 → 0.52.4 (fixed 57+ deprecation warnings)
-- `run.sh` now auto-clears `__pycache__` and kills stale processes on startup
-- All 158 tests passing with zero functional warnings
+- Multi-header `Received` parsing improvements.
+- Enhanced URL extraction from HTML bodies.
+- Robust exception handling across analysis routers.
+- Upgraded FastAPI and Uvicorn dependencies.
 
 ### v0.1.0 (Initial Release)
-- Core email forensics pipeline
-- SPF/DKIM/DMARC analysis
-- ML classification with explainable signals
-- Risk scoring engine
-- Correlation graph
-- Evidence chain of custody
-- Forensic PDF reports
-- React frontend with full analysis dashboard
 
----
-
-## 📍 File Locator
-
-| File | Purpose |
-|---|---|
-| `backend/app/main.py` | Application entry point |
-| `backend/app/config.py` | Configuration (env vars) |
-| `backend/app/db.py` | Database setup |
-| `backend/app/models.py` | ORM models |
-| `backend/app/routers/*.py` | API endpoints (10 modules) |
-| `backend/app/forensics/*.py` | Analysis engines (11 modules) |
-| `backend/app/ml/classifier.py` | ML classifier |
-| `backend/app/parsers/mime_parser.py` | Email parser |
-| `backend/tests/conftest.py` | Test fixtures |
-| `frontend/src/App.jsx` | Frontend app shell |
-| `frontend/src/api.js` | API client |
-| `frontend/src/pages/*.jsx` | UI pages (3) |
-| `frontend/vite.config.js` | Vite + proxy config |
-| `docker-compose.yml` | Docker services |
-| `backend/run.sh` | Quick-start script |
+- Core email forensics pipeline and RFC 822 MIME parser.
+- SPF, DKIM, and DMARC verification modules.
+- Scikit-learn TF-IDF threat classifier.
+- Weighted risk scoring engine.
+- Cryptographic evidence chain and audit log.
 
 ---
 
 ## 🤝 Contributing
 
-1. Fork the repository.
-2. Create a feature branch: `git checkout -b feature/your-feature`.
-3. Write tests for new functionality.
-4. Ensure all tests pass: `pytest -v`.
-5. Submit a pull request.
+1. Clone or fork the repository.
+2. Create a feature branch: `git checkout -b feature/forensics-enhancement`.
+3. Make your changes and add tests under `backend/tests/`.
+4. Ensure all tests pass: `python3 -m pytest -v`.
+5. Submit a pull request with a detailed description of your changes.
 
 ---
 
 ## 📄 License
 
-This project was developed for **Smart India Hackathon 2026** (SIH26106). License terms are subject to SIH competition rules.
+Developed for **Smart India Hackathon 2026** (Problem Statement SIH26106). All rights reserved. Subject to Smart India Hackathon competition guidelines.
