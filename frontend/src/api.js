@@ -124,7 +124,7 @@ export async function addEmailToGraph(emailId) {
 }
 
 export function getReportUrl(emailId) {
-  return `/api/reports/${emailId}/pdf`
+  return `${import.meta.env.VITE_API_URL}/api/reports/${emailId}/pdf`
 }
 
 // ── Health ─────────────────────────────────────────────────────────
